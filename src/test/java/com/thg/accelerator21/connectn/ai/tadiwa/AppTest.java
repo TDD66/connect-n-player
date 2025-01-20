@@ -1,4 +1,4 @@
-package com.thg.accelerator21.connectn.ai.name;
+package com.thg.accelerator21.connectn.ai.tadiwa;
 
 import org.junit.jupiter.api.Test;
 
