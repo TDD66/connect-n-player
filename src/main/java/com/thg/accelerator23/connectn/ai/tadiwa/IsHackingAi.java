@@ -61,15 +61,14 @@ public class IsHackingAi extends Player {
 
     List<Integer> sortedMoves = new ArrayList<>(moves);
     sortedMoves.sort((a, b) -> moveHeuristic(board, b) - moveHeuristic(board, a));
-
+    Map<Integer, Integer> scores = new HashMap<>();
     for(Integer move : sortedMoves){
-
       Board newBoard = new Board(board, move, getCounter());
       Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
       newSpaces.put(move, spaces.get(move) - 1);
 
-      if(spaces.get(move) == 0){
-        spaces.remove(move);
+      if(newSpaces.get(move) == 0){
+        newSpaces.remove(move);
       }
 
       int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, newSpaces,!isMaximisingPlayer);
@@ -87,6 +86,7 @@ public class IsHackingAi extends Player {
         }
         beta = Math.min(beta, bestScore);
       }
+      scores.put(move, result[1]);
       if(beta <= alpha) {
         break;
       }
@@ -100,6 +100,8 @@ public class IsHackingAi extends Player {
     Counter[][] counterPlacements = board.getCounterPlacements();
     score += evaluateSlidingWindow(counterPlacements, this.getCounter());
     score -= evaluateSlidingWindow(counterPlacements, this.getCounter().getOther());
+
+    score += centreColumnBias(board, this.getCounter());
 
     return score;
   }
@@ -198,6 +200,23 @@ public class IsHackingAi extends Player {
     return 0;
   }
 
+  private int centreColumnBias(Board board, Counter counter) {
+    int score = 0, height = 8;
+    int[] centreColumns = {4, 5};
+
+    for(int col: centreColumns){
+      for(int row = 0; row < height; row++){
+        Position position = new Position(col, row);
+        if(board.hasCounterAtPosition(position)){
+          if(board.getCounterAtPosition(position).equals(counter)){
+            score += 1;
+          }
+        }
+      }
+    }
+    return score;
+  }
+
   private int moveHeuristic(Board board, int column) {
     int score = 0;
 
@@ -219,7 +238,6 @@ public class IsHackingAi extends Player {
     else if(column == 3 || column == 6) {
       return 5;
     }
-
     return 0;
   }
 
