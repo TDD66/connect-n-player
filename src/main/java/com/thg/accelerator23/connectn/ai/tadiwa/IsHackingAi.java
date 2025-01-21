@@ -51,7 +51,7 @@ public class IsHackingAi extends Player {
   }
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
-    Set<Integer> moves = legalColumns(spaces);
+    List<Integer> moves = legalColumns(spaces);
     if(depth == MAX_DEPTH || moves.isEmpty()){
       return new int[]{-1, evaluateBoard(board)};
     }
@@ -59,7 +59,10 @@ public class IsHackingAi extends Player {
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-    for(Integer move : moves){
+    List<Integer> sortedMoves = new ArrayList<>(moves);
+    sortedMoves.sort((a, b) -> moveHeuristic(board, b) - moveHeuristic(board, a));
+
+    for(Integer move : sortedMoves){
 
       Board newBoard = new Board(board, move, getCounter());
       Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
@@ -195,8 +198,24 @@ public class IsHackingAi extends Player {
     return 0;
   }
 
-  private List<Integer> sortMovesByHeuristic(Board board) {
-    return new ArrayList<>();
+  private int moveHeuristic(Board board, int column) {
+    int score = 0;
+
+    if(column == 4 || column == 5) {
+      score += 10;
+    }
+
+    if(isWinningMove(board, column, this.getCounter())) {
+      score += 100;
+    } else if (isWinningMove(board, column, this.getCounter())) {
+      score -= 100;
+    }
+
+    return score;
+  }
+
+  private boolean isWinningMove(Board board, int column, Counter counter) {
+    return false;
   }
 
   private Map<Integer, Integer> populateFreeColumns(Board board) {
@@ -213,7 +232,7 @@ public class IsHackingAi extends Player {
     return freeColumns;
   }
 
-  private Set<Integer> legalColumns(Map<Integer, Integer> spaces) {
-      return spaces.keySet();
+  private List<Integer> legalColumns(Map<Integer, Integer> spaces) {
+      return spaces.keySet().stream().toList();
   }
 }
