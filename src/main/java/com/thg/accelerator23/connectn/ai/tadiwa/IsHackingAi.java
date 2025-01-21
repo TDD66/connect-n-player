@@ -55,10 +55,6 @@ public class IsHackingAi extends Player {
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws InvalidMoveException {
 
-    if(depth == 0){
-      return new int[]{alpha, beta};
-    }
-
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
