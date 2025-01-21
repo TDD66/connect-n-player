@@ -10,14 +10,12 @@ public class IsHackingAi extends Player {
   private Map<String, Integer> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000L;
   private static final int MAX_DEPTH = 2;
-  private final Counter opponentCounter;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
     this.startTime = System.nanoTime();
     this.transpositionTable = new HashMap<>();
-    this.opponentCounter = counter == Counter.X ? Counter.O : Counter.X;
   }
 
   @Override
@@ -54,7 +52,6 @@ public class IsHackingAi extends Player {
   }
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
-
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
@@ -63,13 +60,14 @@ public class IsHackingAi extends Player {
     for(Integer move : moves){
 
       Board newBoard = new Board(board, move, getCounter());
-      spaces.put(move, spaces.get(move) - 1);
+      Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
+      newSpaces.put(move, spaces.get(move) - 1);
 
       if(spaces.get(move) == 0){
         spaces.remove(move);
       }
 
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, spaces,!isMaximisingPlayer);
+      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, newSpaces,!isMaximisingPlayer);
       if(isMaximisingPlayer) {
         if(result[1] > bestScore){
           bestScore = result[1];
@@ -91,8 +89,108 @@ public class IsHackingAi extends Player {
     return new int[] {bestMove, bestScore};
   }
 
-  private List<Integer> getPossibleMoves(Board board){
-    return List.of(0,1,2,3,4,5,6,7,8,9);
+  private int evaluateBoard(Board board) {
+    int score = 0;
+
+    Counter[][] counterPlacements = board.getCounterPlacements();
+    score += evaluateSlidingWindow(counterPlacements, this.getCounter());
+    score -= evaluateSlidingWindow(counterPlacements, this.getCounter().getOther());
+
+    return score;
+  }
+
+  private int evaluateSlidingWindow(Counter[][] counters, Counter counter) {
+    int score = 0, height = 8, width = 10;
+
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col <= width - 4; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col + 1][row],
+                counters[col + 2][row],
+                counters[col + 3][row],
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+
+    for (int col = 0; col < width; col++) {
+      for (int row = 0; row < height - 3; row++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col][row + 1],
+                counters[col][row + 2],
+                counters[col][row + 3]
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+
+    for (int row = 3; row < height; row++) {
+      for (int col = 3; col < width; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col - 1][row - 1],
+                counters[col - 2][row - 2],
+                counters[col - 3][row - 3],
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+
+    for (int row = 0; row < height - 3; row++) {
+      for (int col = 0; col < width - 3; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col + 1][row + 1],
+                counters[col + 2][row + 2],
+                counters[col + 3][row + 3],
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+
+    return score;
+  }
+
+  private int evaluateWindow(Counter[] window, Counter counter) {
+    Counter opponentCounter = counter.getOther();
+    int myCount = 0, opponentCount = 0;
+
+      for (Counter value : window) {
+          if (value == counter) {
+              myCount++;
+          } else if (value == opponentCounter) {
+              opponentCount++;
+          }
+      }
+
+    if(myCount == 4){
+      return 1000;
+    }
+    else if(opponentCount == 4){
+      return -1000;
+    }
+    else if(myCount == 3 && opponentCount == 0) {
+      return 100;
+    }
+    else if(opponentCount == 3 && myCount == 0) {
+      return -100;
+    }
+    else if(myCount == 2 && opponentCount == 0) {
+      return 10;
+    }
+    else if(opponentCount == 2 && myCount == 0) {
+      return -10;
+    }
+    else if(myCount == 1 && opponentCount == 0) {
+      return 1;
+    }
+    else if(opponentCount == 1 && myCount == 0) {
+      return -1;
+    }
+
+    return 0;
   }
 
   private List<Integer> sortMovesByHeuristic(Board board) {
@@ -102,7 +200,7 @@ public class IsHackingAi extends Player {
   private Map<Integer, Integer> populateFreeColumns(Board board) {
     Map<Integer, Integer> freeColumns = new HashMap<>();
     for(int x = 0; x < 10; x++){
-      for(int y = 0; y < 8; y++){
+      for(int y = 7; y >= 0; y--){
         Position position = new Position(x, y);
         if(!board.hasCounterAtPosition(position)){
           freeColumns.put(x, y);
