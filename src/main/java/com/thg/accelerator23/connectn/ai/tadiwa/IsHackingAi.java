@@ -219,7 +219,11 @@ public class IsHackingAi extends Player {
     else if(column == 3 || column == 6) {
       return 5;
     }
-    return 0;
+
+    else if(column < 3 ){
+      return 4 - column + 1;
+    }
+    return column + 1 - 5;
   }
 
   private boolean isWinningMove(Board board, int column, Counter counter) {
