@@ -201,9 +201,7 @@ public class IsHackingAi extends Player {
   private int moveHeuristic(Board board, int column) {
     int score = 0;
 
-    if(column == 4 || column == 5) {
-      score += 10;
-    }
+    score += distanceFromCentre(column);
 
     if(isWinningMove(board, column, this.getCounter())) {
       score += 100;
@@ -212,6 +210,16 @@ public class IsHackingAi extends Player {
     }
 
     return score;
+  }
+
+  private int distanceFromCentre(int column) {
+    if (column == 4 || column == 5) {
+      return 10;
+    }
+    else if(column == 3 || column == 6) {
+      return 5;
+    }
+    return 0;
   }
 
   private boolean isWinningMove(Board board, int column, Counter counter) {
