@@ -2,10 +2,7 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 
 import com.thehutgroup.accelerator.connectn.player.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class IsHackingAi extends Player {
@@ -36,9 +33,10 @@ public class IsHackingAi extends Player {
   private int getBestMove(Board board) throws InvalidMoveException {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
+    Map<Integer, Integer> spaces = populateFreeColumns(board);
 
     for (int depth = 0; depth < MAX_DEPTH; depth++) {
-      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, new HashMap<>(),true);
+      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces,true);
 
       if (result[1] > bestScore) {
         bestMove = result[0];
@@ -58,10 +56,17 @@ public class IsHackingAi extends Player {
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-    List<Integer> moves = getPossibleMoves(board);
+    Set<Integer> moves = legalColumns(spaces);
 
     for(Integer move : moves){
+
       Board newBoard = new Board(board, move, getCounter());
+      spaces.put(move, spaces.get(move) - 1);
+
+      if(spaces.get(move) == 0){
+        spaces.remove(move);
+      }
+
       int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, spaces,!isMaximisingPlayer);
       if(isMaximisingPlayer) {
         if(result[1] > bestScore){
@@ -98,15 +103,20 @@ public class IsHackingAi extends Player {
   }
 
   private Map<Integer, Integer> populateFreeColumns(Board board) {
+    Map<Integer, Integer> freeColumns = new HashMap<>();
     for(int x = 0; x < 10; x++){
       for(int y = 0; y < 8; y++){
         Position position = new Position(x, y);
         if(!board.hasCounterAtPosition(position)){
-//          freeColumns.put(x, y);
+          freeColumns.put(x, y);
           break;
         }
       }
     }
-    return new HashMap<>();
+    return freeColumns;
+  }
+
+  private Set<Integer> legalColumns(Map<Integer, Integer> spaces) {
+      return spaces.keySet();
   }
 }
