@@ -47,13 +47,12 @@ public class IsHackingAi extends Player {
         break;
       }
     }
-
     return bestMove;
   }
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
     Set<Integer> moves = legalColumns(spaces);
-    if(depth == 0 || moves.isEmpty()){
+    if(depth == MAX_DEPTH || moves.isEmpty()){
       return new int[]{-1, evaluateBoard(board)};
     }
 
@@ -70,7 +69,7 @@ public class IsHackingAi extends Player {
         spaces.remove(move);
       }
 
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, newSpaces,!isMaximisingPlayer);
+      int[] result = miniMaxWithAlphaBeta(newBoard, depth + 1, alpha, beta, newSpaces,!isMaximisingPlayer);
       if(isMaximisingPlayer) {
         if(result[1] > bestScore){
           bestScore = result[1];
@@ -206,7 +205,7 @@ public class IsHackingAi extends Player {
       for(int y = 7; y >= 0; y--){
         Position position = new Position(x, y);
         if(!board.hasCounterAtPosition(position)){
-          freeColumns.put(x, y);
+          freeColumns.put(x, y + 1);
           break;
         }
       }
