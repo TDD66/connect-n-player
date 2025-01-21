@@ -52,10 +52,13 @@ public class IsHackingAi extends Player {
   }
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
+    Set<Integer> moves = legalColumns(spaces);
+    if(depth == 0 || moves.isEmpty()){
+      return new int[]{-1, evaluateBoard(board)};
+    }
+
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-
-    Set<Integer> moves = legalColumns(spaces);
 
     for(Integer move : moves){
 
