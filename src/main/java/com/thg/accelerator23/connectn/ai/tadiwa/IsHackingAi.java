@@ -38,7 +38,7 @@ public class IsHackingAi extends Player {
     int bestScore = Integer.MIN_VALUE;
 
     for (int depth = 0; depth < MAX_DEPTH; depth++) {
-      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, true);
+      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, new HashMap<>(),true);
 
       if (result[1] > bestScore) {
         bestMove = result[0];
@@ -53,7 +53,7 @@ public class IsHackingAi extends Player {
     return bestMove;
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws InvalidMoveException {
+  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
 
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
@@ -62,7 +62,7 @@ public class IsHackingAi extends Player {
 
     for(Integer move : moves){
       Board newBoard = new Board(board, move, getCounter());
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer);
+      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, spaces,!isMaximisingPlayer);
       if(isMaximisingPlayer) {
         if(result[1] > bestScore){
           bestScore = result[1];
@@ -95,5 +95,18 @@ public class IsHackingAi extends Player {
 
   private List<Integer> sortMovesByHeuristic(Board board) {
     return new ArrayList<>();
+  }
+
+  private Map<Integer, Integer> populateFreeColumns(Board board) {
+    for(int x = 0; x < 10; x++){
+      for(int y = 0; y < 8; y++){
+        Position position = new Position(x, y);
+        if(!board.hasCounterAtPosition(position)){
+//          freeColumns.put(x, y);
+          break;
+        }
+      }
+    }
+    return new HashMap<>();
   }
 }
