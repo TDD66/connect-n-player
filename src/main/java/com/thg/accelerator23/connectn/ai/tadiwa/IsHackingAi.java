@@ -10,12 +10,14 @@ public class IsHackingAi extends Player {
   private Map<String, Integer> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000L;
   private static final int MAX_DEPTH = 2;
+  private final Counter opponentCounter;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
     this.startTime = System.nanoTime();
     this.transpositionTable = new HashMap<>();
+    this.opponentCounter = counter == Counter.X ? Counter.O : Counter.X;
   }
 
   @Override
@@ -91,11 +93,6 @@ public class IsHackingAi extends Player {
 
   private List<Integer> getPossibleMoves(Board board){
     return List.of(0,1,2,3,4,5,6,7,8,9);
-  }
-
-  private int evaluateBoard(Board board) {
-    // Evaluate board with heuristics
-    return 0;
   }
 
   private List<Integer> sortMovesByHeuristic(Board board) {
