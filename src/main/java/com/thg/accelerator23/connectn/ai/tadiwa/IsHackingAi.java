@@ -6,7 +6,7 @@ import java.util.*;
 
 
 public class IsHackingAi extends Player {
-  private long startTime;
+  private final long startTime;
   private Map<Integer, Integer> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000_000_000L;
   private static final int MIN_DEPTH = 2;
@@ -109,9 +109,7 @@ public class IsHackingAi extends Player {
 
     Counter[][] counterPlacements = board.getCounterPlacements();
     score += evaluateSlidingWindow(counterPlacements, this.getCounter());
-    score -= evaluateSlidingWindow(counterPlacements, this.getCounter().getOther());
-
-    score += centreColumnBias(board, this.getCounter());
+    score += centreColumnBias(board);
 
     return score;
   }
@@ -210,7 +208,7 @@ public class IsHackingAi extends Player {
     return 0;
   }
 
-  private int centreColumnBias(Board board, Counter counter) {
+  private int centreColumnBias(Board board) {
     int score = 0, height = 8;
     int[] centreColumns = {4, 5};
 
@@ -218,8 +216,11 @@ public class IsHackingAi extends Player {
       for(int row = 0; row < height; row++){
         Position position = new Position(col, row);
         if(board.hasCounterAtPosition(position)){
-          if(board.getCounterAtPosition(position).equals(counter)){
+          if(board.getCounterAtPosition(position).equals(this.getCounter())){
             score += 1;
+          }
+          else {
+            score -= 1;
           }
         }
       }
@@ -235,7 +236,7 @@ public class IsHackingAi extends Player {
     if(isWinningMove(board, column, this.getCounter())) {
       score += 100;
     } else if (isWinningMove(board, column, this.getCounter().getOther())) {
-      score -= 100;
+      score += 100;
     }
 
     return score;
