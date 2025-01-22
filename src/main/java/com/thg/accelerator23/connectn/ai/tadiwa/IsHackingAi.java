@@ -6,8 +6,8 @@ import java.util.*;
 
 
 public class IsHackingAi extends Player {
-  private final long startTime;
-  private Map<Integer, Integer> transpositionTable;
+  private long startTime;
+  private Map<Integer, TranspositionEntry> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000_000_000L;
   private static final int MIN_DEPTH = 2;
   private static final int MAX_DEPTH = 8;
@@ -15,7 +15,6 @@ public class IsHackingAi extends Player {
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
-    this.startTime = System.nanoTime();
     this.transpositionTable = new HashMap<>();
   }
 
@@ -23,7 +22,7 @@ public class IsHackingAi extends Player {
   public int makeMove(Board board) {
     //TODO: some crazy analysis
     //TODO: make sure said analysis uses less than 2G of heap and returns within 10 seconds on whichever machine is running it
-
+    this.startTime = System.nanoTime();
       try {
           return getBestMove(board);
       } catch (InvalidMoveException e) {
@@ -38,7 +37,6 @@ public class IsHackingAi extends Player {
 
     for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
       int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces,true);
-      transpositionTable = new HashMap<>();
       if (result[1] > bestScore) {
         bestMove = result[0];
         bestScore = result[1];
@@ -55,9 +53,9 @@ public class IsHackingAi extends Player {
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
 
-    int transposedScore = transpositionTableLookup(board);
-    if(transposedScore != Integer.MIN_VALUE) {
-      return new int[]{-1, transposedScore};
+    TranspositionEntry entry = transpositionTableLookup(board);
+    if(entry != null && entry.depth >= depth) {
+      return new int[]{-1, entry.score};
     }
 
     List<Integer> moves = legalColumns(spaces);
@@ -99,7 +97,7 @@ public class IsHackingAi extends Player {
         break;
       }
     }
-    storeInTranspositionTable(board, bestScore);
+    storeInTranspositionTable(board, bestScore, depth);
 
     return new int[] {bestMove, bestScore};
   }
@@ -256,6 +254,10 @@ public class IsHackingAi extends Player {
     return false;
   }
 
+  private boolean isWinningMove(Board board, Counter counter) {
+    return false;
+  }
+
   private Map<Integer, Integer> populateFreeColumns(Board board) {
     Map<Integer, Integer> freeColumns = new HashMap<>();
     for(int x = 0; x < 10; x++){
@@ -274,13 +276,23 @@ public class IsHackingAi extends Player {
       return spaces.keySet().stream().toList();
   }
 
-  private int transpositionTableLookup(Board board) {
+  private TranspositionEntry transpositionTableLookup(Board board) {
     int boardHash = board.hashCode();
-    return this.transpositionTable.getOrDefault(boardHash, Integer.MIN_VALUE);
+    return this.transpositionTable.getOrDefault(boardHash, null);
   }
 
-  private void storeInTranspositionTable(Board board, int score) {
+  private void storeInTranspositionTable(Board board, int score, int depth) {
     int boardHash = board.hashCode();
-    this.transpositionTable.put(boardHash, score);
+    this.transpositionTable.put(boardHash, new TranspositionEntry(score, depth));
+  }
+
+  private static class TranspositionEntry {
+    int score;
+    int depth;
+
+    TranspositionEntry(int score, int depth) {
+      this.score = score;
+      this.depth = depth;
+    }
   }
 }
