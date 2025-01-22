@@ -244,10 +244,10 @@ public class IsHackingAi extends Player {
 
   private int distanceFromCentre(int column) {
     if (column == 4 || column == 5) {
-      return 10;
+      return 5;
     }
     else if(column == 3 || column == 6) {
-      return 5;
+      return 2;
     }
     return 0;
   }
