@@ -10,7 +10,7 @@ public class IsHackingAi extends Player {
   private Map<Integer, Integer> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000_000_000L;
   private static final int MIN_DEPTH = 2;
-  private static final int MAX_DEPTH = 6;
+  private static final int MAX_DEPTH = 8;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -36,7 +36,7 @@ public class IsHackingAi extends Player {
     int bestScore = Integer.MIN_VALUE;
     Map<Integer, Integer> spaces = populateFreeColumns(board);
 
-    for (int depth = MIN_DEPTH; depth < MAX_DEPTH; depth += 2) {
+    for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
       int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces,true);
       transpositionTable = new HashMap<>();
       if (result[1] > bestScore) {
