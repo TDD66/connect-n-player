@@ -7,7 +7,6 @@ import java.util.*;
 
 public class IsHackingAi extends Player {
   private long startTime;
-  private Map<Integer, TranspositionEntry> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000_000_000L;
   private static final int MIN_DEPTH = 2;
   private static final int MAX_DEPTH = 10;
@@ -15,7 +14,6 @@ public class IsHackingAi extends Player {
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
-    this.transpositionTable = new HashMap<>();
   }
 
   @Override
@@ -23,11 +21,11 @@ public class IsHackingAi extends Player {
     //TODO: some crazy analysis
     //TODO: make sure said analysis uses less than 2G of heap and returns within 10 seconds on whichever machine is running it
     this.startTime = System.nanoTime();
-      try {
-          return getBestMove(board);
-      } catch (InvalidMoveException e) {
-          return 4;
-      }
+    try {
+      return getBestMove(board);
+    } catch (InvalidMoveException e) {
+      return 4;
+    }
   }
 
   private int getBestMove(Board board) throws InvalidMoveException {
@@ -36,7 +34,7 @@ public class IsHackingAi extends Player {
     Map<Integer, Integer> spaces = populateFreeColumns(board);
 
     for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
-      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces,true);
+      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces, true);
       if (result[1] > bestScore) {
         bestMove = result[0];
         bestScore = result[1];
@@ -53,13 +51,9 @@ public class IsHackingAi extends Player {
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
 
-    TranspositionEntry entry = transpositionTableLookup(board);
-    if(entry != null && entry.depth >= depth) {
-      return new int[]{-1, entry.score};
-    }
 
     List<Integer> moves = legalColumns(spaces);
-    if(depth == 0 || moves.isEmpty()){
+    if (depth == 0 || moves.isEmpty()) {
       return new int[]{-1, evaluateBoard(board)};
     }
 
@@ -69,37 +63,35 @@ public class IsHackingAi extends Player {
 
     List<Integer> sortedMoves = new ArrayList<>(moves);
     sortedMoves.sort((a, b) -> moveHeuristic(board, b) - moveHeuristic(board, a));
-    for(Integer move : sortedMoves){
+    for (Integer move : sortedMoves) {
       Board newBoard = new Board(board, move, counter);
       Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
       newSpaces.put(move, spaces.get(move) - 1);
 
-      if(newSpaces.get(move) == 0){
+      if (newSpaces.get(move) == 0) {
         newSpaces.remove(move);
       }
 
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, newSpaces,!isMaximisingPlayer);
-      if(isMaximisingPlayer) {
-        if(result[1] > bestScore){
+      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, newSpaces, !isMaximisingPlayer);
+      if (isMaximisingPlayer) {
+        if (result[1] > bestScore) {
           bestScore = result[1];
           bestMove = move;
         }
         alpha = Math.max(alpha, bestScore);
-      }
-      else {
-        if(result[1] < bestScore){
+      } else {
+        if (result[1] < bestScore) {
           bestScore = result[1];
           bestMove = move;
         }
         beta = Math.min(beta, bestScore);
       }
-      if(beta <= alpha) {
+      if (beta <= alpha) {
         break;
       }
     }
-    storeInTranspositionTable(board, bestScore, depth);
 
-    return new int[] {bestMove, bestScore};
+    return new int[]{bestMove, bestScore};
   }
 
   private int evaluateBoard(Board board) {
@@ -192,36 +184,29 @@ public class IsHackingAi extends Player {
     Counter opponentCounter = counter.getOther();
     int myCount = 0, opponentCount = 0;
 
-      for (Counter value : window) {
-          if (value == counter) {
-              myCount++;
-          } else if (value == opponentCounter) {
-              opponentCount++;
-          }
+    for (Counter value : window) {
+      if (value == counter) {
+        myCount++;
+      } else if (value == opponentCounter) {
+        opponentCount++;
       }
+    }
 
-    if(myCount == 4){
+    if (myCount == 4) {
       return 1000;
-    }
-    else if(opponentCount == 4){
+    } else if (opponentCount == 4) {
       return -1000;
-    }
-    else if(myCount == 3 && opponentCount == 0) {
+    } else if (myCount == 3 && opponentCount == 0) {
       return 100;
-    }
-    else if(opponentCount == 3 && myCount == 0) {
+    } else if (opponentCount == 3 && myCount == 0) {
       return -100;
-    }
-    else if(myCount == 2 && opponentCount == 0) {
+    } else if (myCount == 2 && opponentCount == 0) {
       return 10;
-    }
-    else if(opponentCount == 2 && myCount == 0) {
+    } else if (opponentCount == 2 && myCount == 0) {
       return -10;
-    }
-    else if(myCount == 1 && opponentCount == 0) {
+    } else if (myCount == 1 && opponentCount == 0) {
       return 1;
-    }
-    else if(opponentCount == 1 && myCount == 0) {
+    } else if (opponentCount == 1 && myCount == 0) {
       return -1;
     }
 
@@ -232,14 +217,13 @@ public class IsHackingAi extends Player {
     int score = 0, height = 8;
     int[] centreColumns = {4, 5};
 
-    for(int col: centreColumns){
-      for(int row = 0; row < height; row++){
+    for (int col : centreColumns) {
+      for (int row = 0; row < height; row++) {
         Position position = new Position(col, row);
-        if(board.hasCounterAtPosition(position)){
-          if(board.getCounterAtPosition(position).equals(this.getCounter())){
+        if (board.hasCounterAtPosition(position)) {
+          if (board.getCounterAtPosition(position).equals(this.getCounter())) {
             score += 1;
-          }
-          else {
+          } else {
             score -= 1;
           }
         }
@@ -265,8 +249,7 @@ public class IsHackingAi extends Player {
   private int distanceFromCentre(int column) {
     if (column == 4 || column == 5) {
       return 5;
-    }
-    else if(column == 3 || column == 6) {
+    } else if (column == 3 || column == 6) {
       return 2;
     }
     return 0;
@@ -274,7 +257,7 @@ public class IsHackingAi extends Player {
 
   private boolean isWinningMove(Board board, int column, Counter counter) {
     Board newBoard;
-    
+
     try {
       newBoard = new Board(board, column, counter);
     } catch (InvalidMoveException invalidMoveException) {
@@ -301,7 +284,7 @@ public class IsHackingAi extends Player {
                 counters[col + 2][row],
                 counters[col + 3][row]
         };
-        if (evaluateWindow(window, counter) == 1000){
+        if (evaluateWindow(window, counter) == 1000) {
           return true;
         }
       }
@@ -310,7 +293,7 @@ public class IsHackingAi extends Player {
   }
 
   private boolean evaluateVerticalWin(Counter[][] counters, Counter counter) {
-    for(int col = 0; col < 10; col++) {
+    for (int col = 0; col < 10; col++) {
       for (int row = 0; row < 8 - 3; row++) {
         Counter[] window = {
                 counters[col][row],
@@ -318,7 +301,7 @@ public class IsHackingAi extends Player {
                 counters[col][row + 2],
                 counters[col][row + 3]
         };
-        if (evaluateWindow(window, counter) == 1000){
+        if (evaluateWindow(window, counter) == 1000) {
           return true;
         }
       }
@@ -327,7 +310,7 @@ public class IsHackingAi extends Player {
   }
 
   private boolean evaluateRightDiagonalWin(Counter[][] counters, Counter counter) {
-    for(int row = 0; row < 8 - 3; row++){
+    for (int row = 0; row < 8 - 3; row++) {
       for (int col = 0; col < 10 - 3; col++) {
         Counter[] window = {
                 counters[col][row],
@@ -335,7 +318,7 @@ public class IsHackingAi extends Player {
                 counters[col + 2][row + 2],
                 counters[col + 3][row + 3]
         };
-        if (evaluateWindow(window, counter) == 1000){
+        if (evaluateWindow(window, counter) == 1000) {
           return true;
         }
       }
@@ -353,7 +336,7 @@ public class IsHackingAi extends Player {
                 counters[col + 2][row - 2],
                 counters[col + 3][row - 3],
         };
-        if (evaluateWindow(window, counter) == 1000){
+        if (evaluateWindow(window, counter) == 1000) {
           return true;
         }
       }
@@ -364,10 +347,10 @@ public class IsHackingAi extends Player {
 
   private Map<Integer, Integer> populateFreeColumns(Board board) {
     Map<Integer, Integer> freeColumns = new HashMap<>();
-    for(int x = 0; x < 10; x++){
-      for(int y = 0; y < 8; y++){
+    for (int x = 0; x < 10; x++) {
+      for (int y = 0; y < 8; y++) {
         Position position = new Position(x, y);
-        if(!board.hasCounterAtPosition(position)){
+        if (!board.hasCounterAtPosition(position)) {
           freeColumns.put(x, 8 - y);
           break;
         }
@@ -377,30 +360,6 @@ public class IsHackingAi extends Player {
   }
 
   private List<Integer> legalColumns(Map<Integer, Integer> spaces) {
-      return spaces.keySet().stream().toList();
-  }
-
-  private TranspositionEntry transpositionTableLookup(Board board) {
-    int boardHash = hashBoard(board);
-    return this.transpositionTable.getOrDefault(boardHash, null);
-  }
-
-  private void storeInTranspositionTable(Board board, int score, int depth) {
-    int boardHash = hashBoard(board);
-    this.transpositionTable.put(boardHash, new TranspositionEntry(score, depth));
-  }
-
-  private int hashBoard(Board board) {
-    return board.hashCode();
-  }
-
-  private static class TranspositionEntry {
-    int score;
-    int depth;
-
-    TranspositionEntry(int score, int depth) {
-      this.score = score;
-      this.depth = depth;
-    }
+    return spaces.keySet().stream().toList();
   }
 }
