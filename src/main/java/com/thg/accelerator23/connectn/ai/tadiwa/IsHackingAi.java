@@ -115,42 +115,15 @@ public class IsHackingAi extends Player {
   private int evaluateSlidingWindow(Counter[][] counters, Counter counter) {
     int score = 0, height = 8, width = 10;
 
-    for (int row = 0; row < height; row++) {
-      for (int col = 0; col <= width - 4; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row],
-                counters[col + 2][row],
-                counters[col + 3][row],
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
+    score += evaluateHorizontal(counters, counter, height, width, score);
+    score += evaluateVertical(counters, counter, width, height, score);
+    score += evaluateLeftDiag(counters, counter, height, width, score);
+    score += evaluateRightDiag(counters, counter, height, width, score);
 
-    for (int col = 0; col < width; col++) {
-      for (int row = 0; row < height - 3; row++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col][row + 1],
-                counters[col][row + 2],
-                counters[col][row + 3]
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
+    return score;
+  }
 
-    for (int row = 3; row < height; row++) {
-      for (int col = 3; col < width; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col - 1][row - 1],
-                counters[col - 2][row - 2],
-                counters[col - 3][row - 3],
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
-
+  private int evaluateRightDiag(Counter[][] counters, Counter counter, int height, int width, int score) {
     for (int row = 0; row < height - 3; row++) {
       for (int col = 0; col < width - 3; col++) {
         Counter[] window = {
@@ -162,9 +135,54 @@ public class IsHackingAi extends Player {
         score += evaluateWindow(window, counter);
       }
     }
-
     return score;
   }
+
+  private int evaluateLeftDiag(Counter[][] counters, Counter counter, int height, int width, int score) {
+    for (int row = 3; row < height; row++) {
+      for (int col = 3; col < width; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col - 1][row - 1],
+                counters[col - 2][row - 2],
+                counters[col - 3][row - 3],
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+    return score;
+  }
+
+  private int evaluateVertical(Counter[][] counters, Counter counter, int width, int height, int score) {
+    for (int col = 0; col < width; col++) {
+      for (int row = 0; row < height - 3; row++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col][row + 1],
+                counters[col][row + 2],
+                counters[col][row + 3]
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+    return score;
+  }
+
+  private int evaluateHorizontal(Counter[][] counters, Counter counter, int height, int width, int score) {
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col <= width - 4; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col + 1][row],
+                counters[col + 2][row],
+                counters[col + 3][row],
+        };
+        score += evaluateWindow(window, counter);
+      }
+    }
+    return score;
+  }
+
 
   private int evaluateWindow(Counter[] window, Counter counter) {
     Counter opponentCounter = counter.getOther();
@@ -251,12 +269,18 @@ public class IsHackingAi extends Player {
   }
 
   private boolean isWinningMove(Board board, int column, Counter counter) {
+    Board newBoard;
+    
+    try {
+      newBoard = new Board(board, column, counter);
+    } catch (InvalidMoveException invalidMoveException) {
+      return false;
+    }
+    
+    
     return false;
   }
 
-  private boolean isWinningMove(Board board, Counter counter) {
-    return false;
-  }
 
   private Map<Integer, Integer> populateFreeColumns(Board board) {
     Map<Integer, Integer> freeColumns = new HashMap<>();
