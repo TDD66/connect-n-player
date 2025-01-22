@@ -51,6 +51,12 @@ public class IsHackingAi extends Player {
   }
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
+
+    int transposedScore = transpositionTableLookup(board);
+    if(transposedScore != Integer.MIN_VALUE) {
+      return new int[]{-1, transposedScore};
+    }
+
     List<Integer> moves = legalColumns(spaces);
     if(depth == 0 || moves.isEmpty()){
       return new int[]{-1, evaluateBoard(board)};
@@ -61,7 +67,6 @@ public class IsHackingAi extends Player {
 
     List<Integer> sortedMoves = new ArrayList<>(moves);
     sortedMoves.sort((a, b) -> moveHeuristic(board, b) - moveHeuristic(board, a));
-    Map<Integer, Integer> scores = new HashMap<>();
     for(Integer move : sortedMoves){
       Board newBoard = new Board(board, move, getCounter());
       Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
@@ -86,11 +91,12 @@ public class IsHackingAi extends Player {
         }
         beta = Math.min(beta, bestScore);
       }
-      scores.put(move, result[1]);
       if(beta <= alpha) {
         break;
       }
     }
+    storeInTranspositionTable(board, bestScore);
+
     return new int[] {bestMove, bestScore};
   }
 
@@ -265,11 +271,11 @@ public class IsHackingAi extends Player {
 
   private int transpositionTableLookup(Board board) {
     int boardHash = board.hashCode();
-    return transpositionTable.getOrDefault(boardHash, Integer.MIN_VALUE);
+    return this.transpositionTable.getOrDefault(boardHash, Integer.MIN_VALUE);
   }
 
   private void storeInTranspositionTable(Board board, int score) {
     int boardHash = board.hashCode();
-    transpositionTable.put(boardHash, score);
+    this.transpositionTable.put(boardHash, score);
   }
 }
