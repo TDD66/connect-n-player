@@ -33,7 +33,7 @@ public class IsHackingAi extends Player {
     try {
       return getBestMove(board);
     } catch (InvalidMoveException e) {
-      return 4;
+      return 4; // Default to center column
     }
   }
 
