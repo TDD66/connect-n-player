@@ -9,7 +9,7 @@ public class IsHackingAi extends Player {
   private long startTime;
   private Map<Integer, Integer> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000L;
-  private static final int MAX_DEPTH = 8;
+  private static final int MAX_DEPTH = 3;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -47,6 +47,8 @@ public class IsHackingAi extends Player {
         break;
       }
     }
+    float timeTaken = (float) (System.nanoTime() - this.startTime) / (float) 1_000_000_000L;
+    System.out.printf("%.2f seconds%n", timeTaken);
     return bestMove;
   }
 
