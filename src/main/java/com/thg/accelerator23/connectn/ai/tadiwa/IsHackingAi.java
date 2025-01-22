@@ -47,6 +47,8 @@ public class IsHackingAi extends Player {
         break;
       }
     }
+    float timeTaken = (float) (System.nanoTime() - this.startTime) / (float) 1_000_000_000L;
+    System.out.printf("%.2f seconds%n", timeTaken);
     return bestMove;
   }
 
