@@ -10,7 +10,7 @@ public class IsHackingAi extends Player {
   private Map<Integer, TranspositionEntry> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000_000_000L;
   private static final int MIN_DEPTH = 2;
-  private static final int MAX_DEPTH = 8;
+  private static final int MAX_DEPTH = 10;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -253,11 +253,11 @@ public class IsHackingAi extends Player {
 
     score += distanceFromCentre(column);
 
-    if(isWinningMove(board, column, this.getCounter())) {
-      score += 100;
-    } else if (isWinningMove(board, column, this.getCounter().getOther())) {
-      score += 100;
-    }
+//    if(isWinningMove(board, column, this.getCounter())) {
+//      score += 100;
+//    } else if (isWinningMove(board, column, this.getCounter().getOther())) {
+//      score += 100;
+//    }
 
     return score;
   }
@@ -282,23 +282,19 @@ public class IsHackingAi extends Player {
     }
 
     Counter[][] counters = newBoard.getCounterPlacements();
-    if(evaluateWins(counters, counter)){
-      return true;
-    }
-
-    return false;
+    return evaluateWins(counters, counter);
   }
 
   private boolean evaluateWins(Counter[][] counters, Counter counter) {
-    return evaluateVerticalWin(counters, counter, 8, 10) ||
-            evaluateHorizontalWin(counters, counter, 8, 10) ||
-            evaluateRightDiagonalWin(counters, counter, 8, 10) ||
-            evaluateLeftDiagonalWin(counters, counter, 8, 10);
+    return evaluateVerticalWin(counters, counter) ||
+            evaluateHorizontalWin(counters, counter) ||
+            evaluateRightDiagonalWin(counters, counter) ||
+            evaluateLeftDiagonalWin(counters, counter);
   }
 
-  private boolean evaluateHorizontalWin(Counter[][] counters, Counter counter, int height, int width) {
-    for (int row = 0; row < height; row++) {
-      for (int col = 0; col < width - 3; col++) {
+  private boolean evaluateHorizontalWin(Counter[][] counters, Counter counter) {
+    for (int row = 0; row < 8; row++) {
+      for (int col = 0; col < 10 - 3; col++) {
         Counter[] window = {
                 counters[col][row],
                 counters[col + 1][row],
@@ -313,9 +309,9 @@ public class IsHackingAi extends Player {
     return false;
   }
 
-  private boolean evaluateVerticalWin(Counter[][] counters, Counter counter, int height, int width) {
-    for(int col = 0; col < width; col++) {
-      for (int row = 0; row < height - 3; row++) {
+  private boolean evaluateVerticalWin(Counter[][] counters, Counter counter) {
+    for(int col = 0; col < 10; col++) {
+      for (int row = 0; row < 8 - 3; row++) {
         Counter[] window = {
                 counters[col][row],
                 counters[col][row + 1],
@@ -330,9 +326,9 @@ public class IsHackingAi extends Player {
     return false;
   }
 
-  private boolean evaluateRightDiagonalWin(Counter[][] counters, Counter counter, int height, int width) {
-    for(int row = 0; row < height - 3; row++){
-      for (int col = 0; col < width - 3; col++) {
+  private boolean evaluateRightDiagonalWin(Counter[][] counters, Counter counter) {
+    for(int row = 0; row < 8 - 3; row++){
+      for (int col = 0; col < 10 - 3; col++) {
         Counter[] window = {
                 counters[col][row],
                 counters[col + 1][row + 1],
@@ -347,10 +343,10 @@ public class IsHackingAi extends Player {
     return false;
   }
 
-  private boolean evaluateLeftDiagonalWin(Counter[][] counters, Counter counter, int height, int width) {
+  private boolean evaluateLeftDiagonalWin(Counter[][] counters, Counter counter) {
 
-    for (int row = height - 1; row >= 3; row--) {
-      for (int col = 0; col < width - 3; col++) {
+    for (int row = 8 - 1; row >= 3; row--) {
+      for (int col = 0; col < 10 - 3; col++) {
         Counter[] window = {
                 counters[col][row],
                 counters[col + 1][row - 1],
@@ -385,13 +381,17 @@ public class IsHackingAi extends Player {
   }
 
   private TranspositionEntry transpositionTableLookup(Board board) {
-    int boardHash = board.hashCode();
+    int boardHash = hashBoard(board);
     return this.transpositionTable.getOrDefault(boardHash, null);
   }
 
   private void storeInTranspositionTable(Board board, int score, int depth) {
-    int boardHash = board.hashCode();
+    int boardHash = hashBoard(board);
     this.transpositionTable.put(boardHash, new TranspositionEntry(score, depth));
+  }
+
+  private int hashBoard(Board board) {
+    return board.hashCode();
   }
 
   private static class TranspositionEntry {
