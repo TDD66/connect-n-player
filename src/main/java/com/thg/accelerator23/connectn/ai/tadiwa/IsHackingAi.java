@@ -11,9 +11,23 @@ public class IsHackingAi extends Player {
   private static final int MIN_DEPTH = 2;
   private static final int MAX_DEPTH = 10;
 
+  private static final int WIN_SCORE = 1000;
+  private static final int LOSE_SCORE = -1000;
+  private static final int THREE_IN_ROW = 100;
+  private static final int THREE_IN_ROW_OPPONENT = -100;
+  private static final int TWO_IN_ROW = 10;
+  private static final int TWO_IN_ROW_OPPONENT = -10;
+
+  private static final int BOARD_WIDTH = 10;
+  private static final int BOARD_HEIGHT = 8;
+  private static final int CONNECT_N = 4;
+
+  private final int[] columnOrder;
+
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
+    this.columnOrder = new int[]{4, 5, 3, 6, 2, 7, 1, 8, 0, 9};
   }
 
   @Override
@@ -34,6 +48,10 @@ public class IsHackingAi extends Player {
     Map<Integer, Integer> spaces = populateFreeColumns(board);
 
     for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
+      if (isTimeUp()) {
+        break;
+      }
+
       int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces, true);
       if (result[1] > bestScore) {
         bestMove = result[0];
@@ -361,5 +379,9 @@ public class IsHackingAi extends Player {
 
   private List<Integer> legalColumns(Map<Integer, Integer> spaces) {
     return spaces.keySet().stream().toList();
+  }
+
+  private boolean isTimeUp() {
+    return System.nanoTime() - this.startTime > TIME_LIMIT;
   }
 }
