@@ -7,7 +7,7 @@ import java.util.*;
 
 public class IsHackingAi extends Player {
   private long startTime;
-  private Map<String, Integer> transpositionTable;
+  private Map<Integer, Integer> transpositionTable;
   private static final long TIME_LIMIT = 10_000_000_000L;
   private static final int MAX_DEPTH = 5;
 
@@ -261,5 +261,15 @@ public class IsHackingAi extends Player {
 
   private List<Integer> legalColumns(Map<Integer, Integer> spaces) {
       return spaces.keySet().stream().toList();
+  }
+
+  private int transpositionTableLookup(Board board) {
+    int boardHash = board.hashCode();
+    return transpositionTable.getOrDefault(boardHash, Integer.MIN_VALUE);
+  }
+
+  private void storeInTranspositionTable(Board board, int score) {
+    int boardHash = board.hashCode();
+    transpositionTable.put(boardHash, score);
   }
 }
