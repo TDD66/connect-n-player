@@ -115,15 +115,16 @@ public class IsHackingAi extends Player {
   private int evaluateSlidingWindow(Counter[][] counters, Counter counter) {
     int score = 0, height = 8, width = 10;
 
-    score += evaluateHorizontal(counters, counter, height, width, score);
-    score += evaluateVertical(counters, counter, width, height, score);
-    score += evaluateLeftDiag(counters, counter, height, width, score);
-    score += evaluateRightDiag(counters, counter, height, width, score);
+    score += evaluateHorizontal(counters, counter, height, width);
+    score += evaluateVertical(counters, counter, width, height);
+    score += evaluateLeftDiag(counters, counter, height, width);
+    score += evaluateRightDiag(counters, counter, height, width);
 
     return score;
   }
 
-  private int evaluateRightDiag(Counter[][] counters, Counter counter, int height, int width, int score) {
+  private int evaluateRightDiag(Counter[][] counters, Counter counter, int height, int width) {
+    int score = 0;
     for (int row = 0; row < height - 3; row++) {
       for (int col = 0; col < width - 3; col++) {
         Counter[] window = {
@@ -138,14 +139,15 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int evaluateLeftDiag(Counter[][] counters, Counter counter, int height, int width, int score) {
-    for (int row = 3; row < height; row++) {
-      for (int col = 3; col < width; col++) {
+  private int evaluateLeftDiag(Counter[][] counters, Counter counter, int height, int width) {
+    int score = 0;
+    for (int row = height - 1; row >= 3; row--) {
+      for (int col = 0; col < width - 3; col++) {
         Counter[] window = {
                 counters[col][row],
-                counters[col - 1][row - 1],
-                counters[col - 2][row - 2],
-                counters[col - 3][row - 3],
+                counters[col + 1][row - 1],
+                counters[col + 2][row - 2],
+                counters[col + 3][row - 3],
         };
         score += evaluateWindow(window, counter);
       }
@@ -153,7 +155,8 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int evaluateVertical(Counter[][] counters, Counter counter, int width, int height, int score) {
+  private int evaluateVertical(Counter[][] counters, Counter counter, int width, int height) {
+    int score = 0;
     for (int col = 0; col < width; col++) {
       for (int row = 0; row < height - 3; row++) {
         Counter[] window = {
@@ -168,7 +171,8 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int evaluateHorizontal(Counter[][] counters, Counter counter, int height, int width, int score) {
+  private int evaluateHorizontal(Counter[][] counters, Counter counter, int height, int width) {
+    int score = 0;
     for (int row = 0; row < height; row++) {
       for (int col = 0; col <= width - 4; col++) {
         Counter[] window = {
@@ -276,8 +280,88 @@ public class IsHackingAi extends Player {
     } catch (InvalidMoveException invalidMoveException) {
       return false;
     }
-    
-    
+
+    Counter[][] counters = newBoard.getCounterPlacements();
+    if(evaluateWins(counters, counter)){
+      return true;
+    }
+
+    return false;
+  }
+
+  private boolean evaluateWins(Counter[][] counters, Counter counter) {
+    return evaluateVerticalWin(counters, counter, 8, 10) ||
+            evaluateHorizontalWin(counters, counter, 8, 10) ||
+            evaluateRightDiagonalWin(counters, counter, 8, 10) ||
+            evaluateLeftDiagonalWin(counters, counter, 8, 10);
+  }
+
+  private boolean evaluateHorizontalWin(Counter[][] counters, Counter counter, int height, int width) {
+    for (int row = 0; row < height; row++) {
+      for (int col = 0; col < width - 3; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col + 1][row],
+                counters[col + 2][row],
+                counters[col + 3][row]
+        };
+        if (evaluateWindow(window, counter) == 1000){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean evaluateVerticalWin(Counter[][] counters, Counter counter, int height, int width) {
+    for(int col = 0; col < width; col++) {
+      for (int row = 0; row < height - 3; row++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col][row + 1],
+                counters[col][row + 2],
+                counters[col][row + 3]
+        };
+        if (evaluateWindow(window, counter) == 1000){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean evaluateRightDiagonalWin(Counter[][] counters, Counter counter, int height, int width) {
+    for(int row = 0; row < height - 3; row++){
+      for (int col = 0; col < width - 3; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col + 1][row + 1],
+                counters[col + 2][row + 2],
+                counters[col + 3][row + 3]
+        };
+        if (evaluateWindow(window, counter) == 1000){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean evaluateLeftDiagonalWin(Counter[][] counters, Counter counter, int height, int width) {
+
+    for (int row = height - 1; row >= 3; row--) {
+      for (int col = 0; col < width - 3; col++) {
+        Counter[] window = {
+                counters[col][row],
+                counters[col + 1][row - 1],
+                counters[col + 2][row - 2],
+                counters[col + 3][row - 3],
+        };
+        if (evaluateWindow(window, counter) == 1000){
+          return true;
+        }
+      }
+    }
     return false;
   }
 
