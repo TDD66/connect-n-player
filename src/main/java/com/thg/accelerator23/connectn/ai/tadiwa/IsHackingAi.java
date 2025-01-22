@@ -8,8 +8,8 @@ import java.util.*;
 public class IsHackingAi extends Player {
   private long startTime;
   private Map<Integer, Integer> transpositionTable;
-  private static final long TIME_LIMIT = 10_000_000_000L;
-  private static final int MAX_DEPTH = 3;
+  private static final long TIME_LIMIT = 10_000_000_000_000_000L;
+  private static final int MAX_DEPTH = 2;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -66,11 +66,12 @@ public class IsHackingAi extends Player {
 
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+    Counter counter = isMaximisingPlayer ? getCounter() : getCounter().getOther();
 
     List<Integer> sortedMoves = new ArrayList<>(moves);
     sortedMoves.sort((a, b) -> moveHeuristic(board, b) - moveHeuristic(board, a));
     for(Integer move : sortedMoves){
-      Board newBoard = new Board(board, move, getCounter());
+      Board newBoard = new Board(board, move, counter);
       Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
       newSpaces.put(move, spaces.get(move) - 1);
 
@@ -232,7 +233,7 @@ public class IsHackingAi extends Player {
 
     if(isWinningMove(board, column, this.getCounter())) {
       score += 100;
-    } else if (isWinningMove(board, column, this.getCounter())) {
+    } else if (isWinningMove(board, column, this.getCounter().getOther())) {
       score -= 100;
     }
 
@@ -256,10 +257,10 @@ public class IsHackingAi extends Player {
   private Map<Integer, Integer> populateFreeColumns(Board board) {
     Map<Integer, Integer> freeColumns = new HashMap<>();
     for(int x = 0; x < 10; x++){
-      for(int y = 7; y >= 0; y--){
+      for(int y = 0; y < 8; y++){
         Position position = new Position(x, y);
         if(!board.hasCounterAtPosition(position)){
-          freeColumns.put(x, y + 1);
+          freeColumns.put(x, 8 - y);
           break;
         }
       }
