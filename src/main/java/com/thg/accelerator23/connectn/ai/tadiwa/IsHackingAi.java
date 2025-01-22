@@ -35,19 +35,12 @@ public class IsHackingAi extends Player {
     int bestScore = Integer.MIN_VALUE;
     Map<Integer, Integer> spaces = populateFreeColumns(board);
 
-    for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
-      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces,true);
-      if (result[1] > bestScore) {
-        bestMove = result[0];
-        bestScore = result[1];
-      }
+    int[] result = miniMaxWithAlphaBeta(board, MAX_DEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces,true);
+    bestMove = result[0];
+    bestScore = result[1];
 
-      if (System.nanoTime() - this.startTime > TIME_LIMIT) {
-        break;
-      }
-    }
     float timeTaken = (float) (System.nanoTime() - this.startTime) / (float) 1_000_000_000L;
-    System.out.printf("%.2f seconds%n", timeTaken);
+    System.out.println(String.format("%.2f seconds", timeTaken));
     return bestMove;
   }
 
