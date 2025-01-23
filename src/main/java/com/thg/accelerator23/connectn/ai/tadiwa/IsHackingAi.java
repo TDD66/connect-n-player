@@ -88,7 +88,7 @@ public class IsHackingAi extends Player {
     return new int[]{bestMove, bestScore};
   }
 
-  private int centreColumnBias(Board board) {
+  private int centreColumnBias(Board board, Counter counter) {
     int score = 0, height = 8;
     int[] centreColumns = {4, 5};
 
@@ -96,10 +96,8 @@ public class IsHackingAi extends Player {
       for (int row = 0; row < height; row++) {
         Position position = new Position(col, row);
         if (board.hasCounterAtPosition(position)) {
-          if (board.getCounterAtPosition(position).equals(this.getCounter())) {
-            score += 1;
-          } else {
-            score -= 1;
+          if (board.getCounterAtPosition(position).equals(counter)) {
+            score += 3;
           }
         }
       }
@@ -178,6 +176,7 @@ public class IsHackingAi extends Player {
     score += scoreDirection(board, position, counter, 1, 1);
     score += scoreDirection(board, position, counter, 1, -1);
     score += scoreDirection(board, position, counter, 0, 1);
+    score += centreColumnBias(board, counter);
 
     return score;
   }
