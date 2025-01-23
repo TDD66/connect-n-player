@@ -254,19 +254,13 @@ public class IsHackingAi extends Player {
     }
 
     if(count == 4) {
-      return 1000;
+      return Integer.MAX_VALUE;
     }
     else if(count == 3 && openSpaces == 1) {
       return 100;
     }
     else if(count == 2 && openSpaces == 2){
       return 50;
-    }
-    else if(count == 3) {
-      return 25;
-    }
-    else if (count == 2){
-      return 5;
     }
     return 0;
   }
