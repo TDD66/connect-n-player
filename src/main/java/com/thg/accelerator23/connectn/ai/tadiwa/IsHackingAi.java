@@ -11,9 +11,12 @@ public class IsHackingAi extends Player {
   private static final int MIN_DEPTH = 2;
   private static final int MAX_DEPTH = 10;
 
+  private final int[] columnOrder;
+
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
+    columnOrder = new int[]{4, 5, 3, 6, 2, 7, 1, 8, 0, 9};
   }
 
   @Override
@@ -31,10 +34,9 @@ public class IsHackingAi extends Player {
   private int getBestMove(Board board) throws InvalidMoveException {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
-    Map<Integer, Integer> spaces = populateFreeColumns(board);
 
     for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
-      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, spaces, true);
+      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE,  true);
       if (result[1] > bestScore) {
         bestMove = result[0];
         bestScore = result[1];
@@ -49,30 +51,23 @@ public class IsHackingAi extends Player {
     return bestMove;
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, Map<Integer, Integer> spaces, boolean isMaximisingPlayer) throws InvalidMoveException {
+  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws InvalidMoveException {
 
-
-    List<Integer> moves = legalColumns(spaces);
-    if (depth == 0 || moves.isEmpty()) {
-      return new int[]{-1, evaluateBoard(board)};
+    if (depth == 0 || isGameTerminal(board)){
+      return new int[] {-1, evaluateBoard(board)};
     }
 
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
     Counter counter = isMaximisingPlayer ? getCounter() : getCounter().getOther();
 
-    List<Integer> sortedMoves = new ArrayList<>(moves);
-    sortedMoves.sort((a, b) -> moveHeuristic(board, b) - moveHeuristic(board, a));
-    for (Integer move : sortedMoves) {
+    for (Integer move : columnOrder) {
+
+      if(!isColumnPlayable(board, move)) continue;
+
       Board newBoard = new Board(board, move, counter);
-      Map<Integer, Integer> newSpaces = new HashMap<>(spaces);
-      newSpaces.put(move, spaces.get(move) - 1);
 
-      if (newSpaces.get(move) == 0) {
-        newSpaces.remove(move);
-      }
-
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, newSpaces, !isMaximisingPlayer);
+      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer);
       if (isMaximisingPlayer) {
         if (result[1] > bestScore) {
           bestScore = result[1];
@@ -94,125 +89,6 @@ public class IsHackingAi extends Player {
     return new int[]{bestMove, bestScore};
   }
 
-  private int evaluateBoard(Board board) {
-    int score = 0;
-
-    Counter[][] counterPlacements = board.getCounterPlacements();
-    score += evaluateSlidingWindow(counterPlacements, this.getCounter());
-    score += centreColumnBias(board);
-
-    return score;
-  }
-
-  private int evaluateSlidingWindow(Counter[][] counters, Counter counter) {
-    int score = 0, height = 8, width = 10;
-
-    score += evaluateHorizontal(counters, counter, height, width);
-    score += evaluateVertical(counters, counter, width, height);
-    score += evaluateLeftDiag(counters, counter, height, width);
-    score += evaluateRightDiag(counters, counter, height, width);
-
-    return score;
-  }
-
-  private int evaluateRightDiag(Counter[][] counters, Counter counter, int height, int width) {
-    int score = 0;
-    for (int row = 0; row < height - 3; row++) {
-      for (int col = 0; col < width - 3; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row + 1],
-                counters[col + 2][row + 2],
-                counters[col + 3][row + 3],
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
-    return score;
-  }
-
-  private int evaluateLeftDiag(Counter[][] counters, Counter counter, int height, int width) {
-    int score = 0;
-    for (int row = height - 1; row >= 3; row--) {
-      for (int col = 0; col < width - 3; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row - 1],
-                counters[col + 2][row - 2],
-                counters[col + 3][row - 3],
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
-    return score;
-  }
-
-  private int evaluateVertical(Counter[][] counters, Counter counter, int width, int height) {
-    int score = 0;
-    for (int col = 0; col < width; col++) {
-      for (int row = 0; row < height - 3; row++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col][row + 1],
-                counters[col][row + 2],
-                counters[col][row + 3]
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
-    return score;
-  }
-
-  private int evaluateHorizontal(Counter[][] counters, Counter counter, int height, int width) {
-    int score = 0;
-    for (int row = 0; row < height; row++) {
-      for (int col = 0; col <= width - 4; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row],
-                counters[col + 2][row],
-                counters[col + 3][row],
-        };
-        score += evaluateWindow(window, counter);
-      }
-    }
-    return score;
-  }
-
-
-  private int evaluateWindow(Counter[] window, Counter counter) {
-    Counter opponentCounter = counter.getOther();
-    int myCount = 0, opponentCount = 0;
-
-    for (Counter value : window) {
-      if (value == counter) {
-        myCount++;
-      } else if (value == opponentCounter) {
-        opponentCount++;
-      }
-    }
-
-    if (myCount == 4) {
-      return 1000;
-    } else if (opponentCount == 4) {
-      return -1000;
-    } else if (myCount == 3 && opponentCount == 0) {
-      return 100;
-    } else if (opponentCount == 3 && myCount == 0) {
-      return -100;
-    } else if (myCount == 2 && opponentCount == 0) {
-      return 10;
-    } else if (opponentCount == 2 && myCount == 0) {
-      return -10;
-    } else if (myCount == 1 && opponentCount == 0) {
-      return 1;
-    } else if (opponentCount == 1 && myCount == 0) {
-      return -1;
-    }
-
-    return 0;
-  }
-
   private int centreColumnBias(Board board) {
     int score = 0, height = 8;
     int[] centreColumns = {4, 5};
@@ -232,134 +108,120 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int moveHeuristic(Board board, int column) {
+  public boolean isGameTerminal(Board board) {
+    int width = board.getConfig().getWidth();
+    int height = board.getConfig().getHeight();
+    boolean boardFull = true;
+
+    for(int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        Position position = new Position(x, y);
+        if (board.hasCounterAtPosition(position)) {
+          Counter counter = board.getCounterAtPosition(position);
+          if(checkDirection(board, position, counter, 1, 0) ||
+             checkDirection(board, position, counter, 0, 1) ||
+             checkDirection(board, position, counter, 1, 1) ||
+             checkDirection(board, position, counter, 1, -1)
+          ) {
+            return true;
+          }
+        } else if(boardFull){
+          boardFull = false;
+        }
+      }
+    }
+
+    return boardFull;
+  }
+
+  private boolean checkDirection(Board board, Position position, Counter counter, int dx, int dy) {
+    int neededForWin = 4, x = position.getX(), y = position.getY();
+
+    for(int i = 0; i < 4; i++){
+      Position nextPosition = new Position(x + i * dx, y + i * dy);
+      if(board.isWithinBoard(nextPosition) &&
+         board.getCounterAtPosition(nextPosition).equals(counter)
+      ) {
+        neededForWin--;
+      }
+      else break;
+    }
+
+    return neededForWin == 0;
+  }
+
+  private int evaluateBoard(Board board) {
+    int score = 0;
+    int height = board.getConfig().getHeight(), width = board.getConfig().getWidth();
+
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        Position position = new Position(x, y);
+        if (board.hasCounterAtPosition(position)) {
+          Counter counter = board.getCounterAtPosition(position);
+          if(counter == this.getCounter()) {
+            score += evaluatePosition(board, position, counter);
+          }
+          else {
+            score -= evaluatePosition(board, position, counter);
+          }
+        }
+      }
+    }
+    return score;
+  }
+
+  private int evaluatePosition(Board board, Position position, Counter counter) {
     int score = 0;
 
-    score += distanceFromCentre(column);
-
-//    if(isWinningMove(board, column, this.getCounter())) {
-//      score += 100;
-//    } else if (isWinningMove(board, column, this.getCounter().getOther())) {
-//      score += 100;
-//    }
+    score += scoreDirection(board, position, counter, 1, 0);
+    score += scoreDirection(board, position, counter, 1, 1);
+    score += scoreDirection(board, position, counter, 1, -1);
+    score += scoreDirection(board, position, counter, 0, 1);
 
     return score;
   }
 
-  private int distanceFromCentre(int column) {
-    if (column == 4 || column == 5) {
-      return 5;
-    } else if (column == 3 || column == 6) {
-      return 2;
+  private int scoreDirection(Board board, Position position, Counter counter, int dx, int dy) {
+    int count = 0;
+    int openSpaces = 0;
+    int x = position.getX(), y = position.getY();
+
+    for(int i = 0; i < 4; i++){
+      Position nextPosition = new Position(x + i * dx, y + i * dy);
+      if(board.isWithinBoard(nextPosition)) {
+        if(board.getCounterAtPosition(nextPosition).equals(counter)) {
+          count++;
+        }
+        else if(!board.hasCounterAtPosition(nextPosition)){
+          openSpaces++;
+        }
+      }
     }
+
+    if(count == 4) {
+      return 1000;
+    }
+    else if(count == 3 && openSpaces == 1) {
+      return 100;
+    }
+    else if(count == 2 && openSpaces == 2){
+      return 50;
+    }
+    else if(count == 3) {
+      return 25;
+    }
+    else if (count == 2){
+      return 5;
+    }
+
     return 0;
   }
 
-  private boolean isWinningMove(Board board, int column, Counter counter) {
-    Board newBoard;
 
-    try {
-      newBoard = new Board(board, column, counter);
-    } catch (InvalidMoveException invalidMoveException) {
-      return false;
-    }
-
-    Counter[][] counters = newBoard.getCounterPlacements();
-    return evaluateWins(counters, counter);
+  private boolean isColumnPlayable(Board board, int column) {
+    Position position = new Position(column, board.getConfig().getHeight() - 1);
+    return !board.hasCounterAtPosition(position);
   }
 
-  private boolean evaluateWins(Counter[][] counters, Counter counter) {
-    return evaluateVerticalWin(counters, counter) ||
-            evaluateHorizontalWin(counters, counter) ||
-            evaluateRightDiagonalWin(counters, counter) ||
-            evaluateLeftDiagonalWin(counters, counter);
-  }
-
-  private boolean evaluateHorizontalWin(Counter[][] counters, Counter counter) {
-    for (int row = 0; row < 8; row++) {
-      for (int col = 0; col < 10 - 3; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row],
-                counters[col + 2][row],
-                counters[col + 3][row]
-        };
-        if (evaluateWindow(window, counter) == 1000) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private boolean evaluateVerticalWin(Counter[][] counters, Counter counter) {
-    for (int col = 0; col < 10; col++) {
-      for (int row = 0; row < 8 - 3; row++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col][row + 1],
-                counters[col][row + 2],
-                counters[col][row + 3]
-        };
-        if (evaluateWindow(window, counter) == 1000) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private boolean evaluateRightDiagonalWin(Counter[][] counters, Counter counter) {
-    for (int row = 0; row < 8 - 3; row++) {
-      for (int col = 0; col < 10 - 3; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row + 1],
-                counters[col + 2][row + 2],
-                counters[col + 3][row + 3]
-        };
-        if (evaluateWindow(window, counter) == 1000) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private boolean evaluateLeftDiagonalWin(Counter[][] counters, Counter counter) {
-
-    for (int row = 8 - 1; row >= 3; row--) {
-      for (int col = 0; col < 10 - 3; col++) {
-        Counter[] window = {
-                counters[col][row],
-                counters[col + 1][row - 1],
-                counters[col + 2][row - 2],
-                counters[col + 3][row - 3],
-        };
-        if (evaluateWindow(window, counter) == 1000) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-
-  private Map<Integer, Integer> populateFreeColumns(Board board) {
-    Map<Integer, Integer> freeColumns = new HashMap<>();
-    for (int x = 0; x < 10; x++) {
-      for (int y = 0; y < 8; y++) {
-        Position position = new Position(x, y);
-        if (!board.hasCounterAtPosition(position)) {
-          freeColumns.put(x, 8 - y);
-          break;
-        }
-      }
-    }
-    return freeColumns;
-  }
-
-  private List<Integer> legalColumns(Map<Integer, Integer> spaces) {
-    return spaces.keySet().stream().toList();
-  }
 }
