@@ -301,6 +301,20 @@ public class IsHackingAi extends Player {
     return -1;
   }
 
+  private Counter[][] makeMoveArray(Counter[][] board, Counter counter, int column) throws InvalidMoveException {
+    if (column < 0 || column >= WIDTH) {
+      throw new InvalidMoveException("Column out of bounds");
+    }
+    for(int row = 0; row < HEIGHT; row++) {
+      if(board[column][row] == null) {
+        board[column][row] = counter;
+        return board;
+      }
+    }
+
+    throw new InvalidMoveException("No space in column");
+  }
+
   private boolean isWithinBoardArray(int x, int y){
     return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
   }
