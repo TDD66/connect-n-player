@@ -50,27 +50,25 @@ public class IsHackingAi extends Player {
   }
 
   private int iterativeDeepeningSearch(Board board) {
-    Map<Integer, Integer[]> bestMovesAtDepth = new HashMap<>();
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
 
     for(int depth = MIN_DEPTH; !isTimeUp() && depth <= MAX_DEPTH; depth += 2) {
       try{
         int[] result = searchAtDepth(board, depth);
-        bestMovesAtDepth.put(depth, new Integer[]{result[0], result[1]});
         if (result[1] > bestScore) {
           bestScore = result[1];
           bestMove = result[0];
         }
-      } catch (TimeoutException e) {
-        System.out.println("Timeout while waiting for depth " + depth);
+      } catch (TimeOutException e) {
+        System.out.println("Best move: " + bestMove);
         break;
       }
     }
     return bestMove;
   }
 
-  private int[] searchAtDepth(Board board, int depth) throws TimeoutException {
+  private int[] searchAtDepth(Board board, int depth) throws TimeOutException {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
 
@@ -86,7 +84,8 @@ public class IsHackingAi extends Player {
       }
       catch (InvalidMoveException ignored) {}
       catch (TimeOutException timeOutException) {
-        break;
+        System.out.println("Depth failed at: " + depth);
+        throw timeOutException;
       }
     }
     return new int[]{bestMove, bestScore};
