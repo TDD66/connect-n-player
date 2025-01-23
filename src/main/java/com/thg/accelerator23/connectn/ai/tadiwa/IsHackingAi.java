@@ -3,7 +3,6 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 import com.thehutgroup.accelerator.connectn.player.*;
 
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 
 
 public class IsHackingAi extends Player {
@@ -14,14 +13,14 @@ public class IsHackingAi extends Player {
 
   private static final int CENTRE_ADJUSTMENT = 1;
 
-  private final int[] columnOrder;
   private static final int HEIGHT = 8;
   private static final int WIDTH = 10;
+  private List<Integer> legalMoves;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
-    columnOrder = new int[]{4, 5, 3, 6, 2, 7, 1, 8, 0, 9};
+    legalMoves = new ArrayList<>();
   }
 
   @Override
@@ -51,30 +50,27 @@ public class IsHackingAi extends Player {
 
   private int iterativeDeepeningSearch(Board board) {
     Map<Integer, Integer[]> bestMovesAtDepth = new HashMap<>();
+    this.legalMoves = getLegalMoves(board);
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
 
-    for(int depth = MIN_DEPTH; !isTimeUp() && depth <= MAX_DEPTH; depth += 2) {
-      try{
-        int[] result = searchAtDepth(board, depth);
-        bestMovesAtDepth.put(depth, new Integer[]{result[0], result[1]});
-        if (result[1] > bestScore) {
-          bestScore = result[1];
-          bestMove = result[0];
-        }
-      } catch (TimeoutException e) {
-        System.out.println("Timeout while waiting for depth " + depth);
-        break;
+    for(int depth = MIN_DEPTH; !isTimeUp() && depth <= MAX_DEPTH; depth++) {
+      int[] result = searchAtDepth(board, depth, this.legalMoves);
+      bestMovesAtDepth.put(depth, new Integer[]{result[0], result[1]});
+      if (result[1] > bestScore) {
+        bestScore = result[1];
+        bestMove = result[0];
       }
     }
     return bestMove;
   }
 
-  private int[] searchAtDepth(Board board, int depth) throws TimeoutException {
+  private int[] searchAtDepth(Board board, int depth, List<Integer> legalMoves) {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
 
-    for(int move : columnOrder) {
+    for(int move : legalMoves) {
+
       try {
         Board newBoard = new Board(board, move, getCounter());
         int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
@@ -86,6 +82,9 @@ public class IsHackingAi extends Player {
       }
       catch (InvalidMoveException ignored) {}
       catch (TimeOutException timeOutException) {
+        System.out.println("Timeout while searching depth " + depth);
+        System.out.println("Best move " + bestMove);
+        System.out.println("Best score " + bestScore);
         break;
       }
     }
@@ -105,7 +104,7 @@ public class IsHackingAi extends Player {
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
     Counter counter = isMaximisingPlayer ? getCounter() : getCounter().getOther();
 
-    for (Integer move : columnOrder) {
+    for (Integer move : this.legalMoves) {
 
       if(!isColumnPlayable(board, move)) continue;
 
@@ -314,6 +313,21 @@ public class IsHackingAi extends Player {
 
   private boolean isTimeUp() {
     return System.nanoTime() - startTime > TIME_LIMIT - 5_000_000L;
+  }
+
+  private List<Integer> getLegalMoves(Board board) {
+    List<Integer> legalMoves = new ArrayList<>();
+    Counter[][] counterPlacements = board.getCounterPlacements();
+
+    for(int col = 0; col < board.getConfig().getWidth(); col++) {
+      for(int row = 0; row < board.getConfig().getHeight(); row++) {
+        if (counterPlacements[col][row] == null) {
+          legalMoves.add(col);
+        }
+      }
+    }
+
+    return legalMoves;
   }
 
   private static class TimeOutException extends RuntimeException {
