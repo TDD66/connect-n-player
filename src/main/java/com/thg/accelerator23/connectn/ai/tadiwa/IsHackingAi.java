@@ -2,12 +2,15 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 
 import com.thehutgroup.accelerator.connectn.player.*;
 
+import java.util.*;
+import java.util.concurrent.TimeoutException;
+
 
 public class IsHackingAi extends Player {
   private long startTime;
-  private static final long TIME_LIMIT = 10_000_000_000_000_000L;
-  private static final int MIN_DEPTH = 2;
-  private static final int MAX_DEPTH = 10;
+  private static final long TIME_LIMIT = 10_000_000_000L;
+  private static final int MIN_DEPTH = 6;
+  private static final int MAX_DEPTH = 50;
 
   private static final int CENTRE_ADJUSTMENT = 1;
 
@@ -27,15 +30,12 @@ public class IsHackingAi extends Player {
     //TODO: make sure said analysis uses less than 2G of heap and returns within 10 seconds on whichever machine is running it
     this.startTime = System.nanoTime();
     int move = getBestMove(board);
-    float timeTaken = (float) (System.nanoTime() - this.startTime) / (float) 1_000_000_000L;
-    System.out.printf("%.2f seconds%n", timeTaken);
+    long timeTaken = System.nanoTime() - this.startTime;
+    System.out.printf("%d seconds%n", timeTaken);
     return move;
   }
 
   private int getBestMove(Board board) {
-    int bestMove = -1;
-    int bestScore = Integer.MIN_VALUE;
-
     int canIWin = checkInstantWin(board, getCounter());
     if(canIWin != -1) {
       return canIWin;
@@ -46,21 +46,57 @@ public class IsHackingAi extends Player {
       return canILose;
     }
 
-    for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
-      int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE,  true);
-      if (result[1] > bestScore) {
-        bestMove = result[0];
-        bestScore = result[1];
-      }
+    return iterativeDeepeningSearch(board);
+  }
 
-      if (System.nanoTime() - this.startTime > TIME_LIMIT) {
+  private int iterativeDeepeningSearch(Board board) {
+    Map<Integer, Integer[]> bestMovesAtDepth = new HashMap<>();
+    int bestMove = -1;
+    int bestScore = Integer.MIN_VALUE;
+
+    for(int depth = MIN_DEPTH; !isTimeUp() && depth <= MAX_DEPTH; depth += 2) {
+      try{
+        int[] result = searchAtDepth(board, depth);
+        bestMovesAtDepth.put(depth, new Integer[]{result[0], result[1]});
+        if (result[1] > bestScore) {
+          bestScore = result[1];
+          bestMove = result[0];
+        }
+      } catch (TimeoutException e) {
+        System.out.println("Timeout while waiting for depth " + depth);
         break;
       }
     }
     return bestMove;
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) {
+  private int[] searchAtDepth(Board board, int depth) throws TimeoutException {
+    int bestMove = -1;
+    int bestScore = Integer.MIN_VALUE;
+
+    for(int move : columnOrder) {
+      try {
+        Board newBoard = new Board(board, move, getCounter());
+        int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
+
+        if (result[1] > bestScore) {
+          bestScore = result[1];
+          bestMove = move;
+        }
+      }
+      catch (InvalidMoveException ignored) {}
+      catch (TimeOutException timeOutException) {
+        break;
+      }
+    }
+    return new int[]{bestMove, bestScore};
+  }
+
+  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws TimeOutException {
+    if(isTimeUp()){
+      throw new TimeOutException();
+    }
+
     if (depth == 0 || isGameTerminal(board)){
       return new int[] {-1, evaluateBoard(board)};
     }
@@ -274,6 +310,13 @@ public class IsHackingAi extends Player {
 
   private boolean isWithinBoardArray(int x, int y){
     return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
+  }
+
+  private boolean isTimeUp() {
+    return System.nanoTime() - startTime > TIME_LIMIT - 5_000_000L;
+  }
+
+  private static class TimeOutException extends RuntimeException {
   }
 
 }
