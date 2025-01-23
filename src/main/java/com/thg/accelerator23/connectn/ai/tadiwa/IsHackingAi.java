@@ -2,8 +2,6 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 
 import com.thehutgroup.accelerator.connectn.player.*;
 
-import java.util.*;
-
 
 public class IsHackingAi extends Player {
   private long startTime;
@@ -24,16 +22,25 @@ public class IsHackingAi extends Player {
     //TODO: some crazy analysis
     //TODO: make sure said analysis uses less than 2G of heap and returns within 10 seconds on whichever machine is running it
     this.startTime = System.nanoTime();
-    try {
-      return getBestMove(board);
-    } catch (InvalidMoveException e) {
-      return 4;
-    }
+    int move = getBestMove(board);
+    float timeTaken = (float) (System.nanoTime() - this.startTime) / (float) 1_000_000_000L;
+    System.out.printf("%.2f seconds%n", timeTaken);
+    return move;
   }
 
-  private int getBestMove(Board board) throws InvalidMoveException {
+  private int getBestMove(Board board) {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
+
+    int canIWin = checkInstantWin(board, getCounter());
+    if(canIWin != -1) {
+      return canIWin;
+    }
+
+    int canILose = checkInstantWin(board, getCounter().getOther());
+    if(canILose != -1) {
+      return canILose;
+    }
 
     for (int depth = MIN_DEPTH; depth <= MAX_DEPTH; depth += 2) {
       int[] result = miniMaxWithAlphaBeta(board, depth, Integer.MIN_VALUE, Integer.MAX_VALUE,  true);
@@ -46,12 +53,10 @@ public class IsHackingAi extends Player {
         break;
       }
     }
-    float timeTaken = (float) (System.nanoTime() - this.startTime) / (float) 1_000_000_000L;
-    System.out.printf("%.2f seconds%n", timeTaken);
     return bestMove;
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws InvalidMoveException {
+  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) {
     if (depth == 0 || isGameTerminal(board)){
       return new int[] {-1, evaluateBoard(board)};
     }
@@ -64,7 +69,12 @@ public class IsHackingAi extends Player {
 
       if(!isColumnPlayable(board, move)) continue;
 
-      Board newBoard = new Board(board, move, counter);
+      Board newBoard;
+      try{
+        newBoard = new Board(board, move, counter);
+      } catch (InvalidMoveException e) {
+        continue;
+      }
 
       int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer);
       if (isMaximisingPlayer) {
@@ -115,11 +125,7 @@ public class IsHackingAi extends Player {
         Position position = new Position(x, y);
         if (board.hasCounterAtPosition(position)) {
           Counter counter = board.getCounterAtPosition(position);
-          if(checkDirection(board, position, counter, 1, 0) ||
-             checkDirection(board, position, counter, 0, 1) ||
-             checkDirection(board, position, counter, 1, 1) ||
-             checkDirection(board, position, counter, 1, -1)
-          ) {
+          if(hasWon(board, position, counter)) {
             return true;
           }
         } else if(boardFull){
@@ -129,6 +135,13 @@ public class IsHackingAi extends Player {
     }
 
     return boardFull;
+  }
+
+  private boolean hasWon(Board board, Position position, Counter counter) {
+    return checkDirection(board, position, counter, 1, 0) ||
+           checkDirection(board, position, counter, 0, 1) ||
+           checkDirection(board, position, counter, 1, 1) ||
+           checkDirection(board, position, counter, 1, -1);
   }
 
   private boolean checkDirection(Board board, Position position, Counter counter, int dx, int dy) {
@@ -222,6 +235,36 @@ public class IsHackingAi extends Player {
   private boolean isColumnPlayable(Board board, int column) {
     Position position = new Position(column, board.getConfig().getHeight() - 1);
     return !board.hasCounterAtPosition(position);
+  }
+
+  private boolean isWinningMove(Board board, Counter counter, int column) {
+    try{
+      Board newBoard = new Board(board, column, counter);
+      for (int x = 0; x < newBoard.getConfig().getWidth(); x++) {
+        for (int y = 0; y < newBoard.getConfig().getHeight(); y++) {
+          Position position = new Position(x, y);
+          if (newBoard.hasCounterAtPosition(position)) {
+            if (newBoard.getCounterAtPosition(position).equals(counter)) {
+              if(hasWon(newBoard, position, counter)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    catch(InvalidMoveException ignored) {
+    }
+    return false;
+  }
+
+  private int checkInstantWin(Board board, Counter counter) {
+    for (int x = 0; x < board.getConfig().getWidth(); x++) {
+      if(isWinningMove(board, counter, x)) {
+        return x;
+      }
+    }
+    return -1;
   }
 
 }
