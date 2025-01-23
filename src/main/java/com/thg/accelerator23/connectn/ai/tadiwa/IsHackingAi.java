@@ -257,7 +257,7 @@ public class IsHackingAi extends Player {
       return Integer.MAX_VALUE;
     }
     else if(count == 3 && openSpaces == 1) {
-      return 100;
+      return 500;
     }
     else if(count == 2 && openSpaces == 2){
       return 50;
