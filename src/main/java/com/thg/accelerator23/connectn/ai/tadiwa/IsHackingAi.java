@@ -52,7 +52,6 @@ public class IsHackingAi extends Player {
   }
 
   private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws InvalidMoveException {
-
     if (depth == 0 || isGameTerminal(board)){
       return new int[] {-1, evaluateBoard(board)};
     }
@@ -139,8 +138,9 @@ public class IsHackingAi extends Player {
 
     for(int i = 0; i < 4; i++){
       Position nextPosition = new Position(x + i * dx, y + i * dy);
+      Counter boardCounter = board.getCounterAtPosition(nextPosition);
       if(board.isWithinBoard(nextPosition) &&
-         board.getCounterAtPosition(nextPosition).equals(counter)
+         counter.equals(boardCounter)
       ) {
         neededForWin--;
       }
@@ -189,8 +189,9 @@ public class IsHackingAi extends Player {
 
     for(int i = 0; i < 4; i++){
       Position nextPosition = new Position(x + i * dx, y + i * dy);
+      Counter boardCounter = board.getCounterAtPosition(nextPosition);
       if(board.isWithinBoard(nextPosition)) {
-        if(board.getCounterAtPosition(nextPosition).equals(counter)) {
+        if(counter.equals(boardCounter)) {
           count++;
         }
         else if(!board.hasCounterAtPosition(nextPosition)){
