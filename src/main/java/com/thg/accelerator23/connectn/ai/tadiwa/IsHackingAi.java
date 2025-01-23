@@ -12,6 +12,8 @@ public class IsHackingAi extends Player {
   private static final int CENTRE_ADJUSTMENT = 1;
 
   private final int[] columnOrder;
+  private static final int HEIGHT = 8;
+  private static final int WIDTH = 10;
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -197,18 +199,19 @@ public class IsHackingAi extends Player {
   }
 
   private int scoreDirection(Board board, Position position, Counter counter, int dx, int dy) {
+    Counter[][] counterPlacements = board.getCounterPlacements();
     int count = 0;
     int openSpaces = 0;
     int x = position.getX(), y = position.getY();
 
     for(int i = 0; i < 4; i++){
-      Position nextPosition = new Position(x + i * dx, y + i * dy);
-      Counter boardCounter = board.getCounterAtPosition(nextPosition);
-      if(board.isWithinBoard(nextPosition)) {
+      int nx = x + i * dx, ny = y + i * dy;
+      if(isWithinBoardArray(nx, ny)) {
+        Counter boardCounter = counterPlacements[nx][ny];
         if(counter.equals(boardCounter)) {
           count++;
         }
-        else if(!board.hasCounterAtPosition(nextPosition)){
+        else if(counterPlacements[nx][ny] == null){
           openSpaces++;
         }
       }
@@ -267,6 +270,10 @@ public class IsHackingAi extends Player {
       }
     }
     return -1;
+  }
+
+  private boolean isWithinBoardArray(int x, int y){
+    return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
   }
 
 }
