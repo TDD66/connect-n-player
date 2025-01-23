@@ -103,14 +103,15 @@ public class IsHackingAi extends Player {
   }
 
   private int centreColumnBias(Board board, Counter counter) {
+    Counter[][] counterPlacements = board.getCounterPlacements();
     int score = 0, height = 8;
     int[] centreColumns = {4, 5};
 
     for (int col : centreColumns) {
       for (int row = 0; row < height; row++) {
-        Position position = new Position(col, row);
-        if (board.hasCounterAtPosition(position)) {
-          if (board.getCounterAtPosition(position).equals(counter)) {
+        Counter counterAtPosition = counterPlacements[col][row];
+        if (counterAtPosition != null) {
+          if (counterAtPosition.equals(counter)) {
             score += CENTRE_ADJUSTMENT;
           }
         }
