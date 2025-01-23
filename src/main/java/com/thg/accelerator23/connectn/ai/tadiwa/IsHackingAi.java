@@ -2,17 +2,11 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 
 import com.thehutgroup.accelerator.connectn.player.*;
 
-import java.util.*;
-import java.util.concurrent.TimeoutException;
-
-
 public class IsHackingAi extends Player {
   private long startTime;
   private static final long TIME_LIMIT = 10_000_000_000L;
   private static final int MIN_DEPTH = 6;
   private static final int MAX_DEPTH = 50;
-
-  private static final int CENTRE_ADJUSTMENT = 1;
 
   private final int[] columnOrder;
   private static final int HEIGHT = 8;
@@ -71,11 +65,12 @@ public class IsHackingAi extends Player {
   private int[] searchAtDepth(Board board, int depth) throws TimeOutException {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
+    Counter[][] counterPlacements = board.getCounterPlacements();
 
     for(int move : columnOrder) {
       try {
-        Board newBoard = new Board(board, move, getCounter());
-        int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
+        Counter[][] newCounterPlacements = makeMoveArray(counterPlacements, getCounter(), move);
+        int[] result = miniMaxWithAlphaBeta(newCounterPlacements, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
 
         if (result[1] > bestScore) {
           bestScore = result[1];
@@ -91,13 +86,13 @@ public class IsHackingAi extends Player {
     return new int[]{bestMove, bestScore};
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws TimeOutException {
+  private int[] miniMaxWithAlphaBeta(Counter[][] counterPlacements, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws TimeOutException {
     if(isTimeUp()){
       throw new TimeOutException();
     }
 
-    if (depth == 0 || isGameTerminal(board)){
-      return new int[] {-1, evaluateBoard(board)};
+    if (depth == 0 || isGameTerminal(counterPlacements)){
+      return new int[] {-1, evaluateBoard(counterPlacements)};
     }
 
     int bestMove = -1;
@@ -106,16 +101,16 @@ public class IsHackingAi extends Player {
 
     for (Integer move : columnOrder) {
 
-      if(!isColumnPlayable(board, move)) continue;
+      if(!isColumnPlayable(counterPlacements, move)) continue;
 
-      Board newBoard;
+      Counter[][] newCounterPlacements;
       try{
-        newBoard = new Board(board, move, counter);
+        newCounterPlacements = makeMoveArray(counterPlacements, counter, move);
       } catch (InvalidMoveException e) {
         continue;
       }
 
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer);
+      int[] result = miniMaxWithAlphaBeta(newCounterPlacements, depth - 1, alpha, beta, !isMaximisingPlayer);
       if (isMaximisingPlayer) {
         if (result[1] > bestScore) {
           bestScore = result[1];
@@ -137,35 +132,14 @@ public class IsHackingAi extends Player {
     return new int[]{bestMove, bestScore};
   }
 
-  private int centreColumnBias(Board board, Counter counter) {
-    Counter[][] counterPlacements = board.getCounterPlacements();
-    int score = 0, height = 8;
-    int[] centreColumns = {4, 5};
-
-    for (int col : centreColumns) {
-      for (int row = 0; row < height; row++) {
-        Counter counterAtPosition = counterPlacements[col][row];
-        if (counterAtPosition != null) {
-          if (counterAtPosition.equals(counter)) {
-            score += CENTRE_ADJUSTMENT;
-          }
-        }
-      }
-    }
-    return score;
-  }
-
-  public boolean isGameTerminal(Board board) {
-    int width = board.getConfig().getWidth();
-    int height = board.getConfig().getHeight();
+  public boolean isGameTerminal(Counter[][] counterPlacements) {
     boolean boardFull = true;
 
-    for(int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        Position position = new Position(x, y);
-        if (board.hasCounterAtPosition(position)) {
-          Counter counter = board.getCounterAtPosition(position);
-          if(hasWon(board, position, counter)) {
+    for(int x = 0; x < WIDTH; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
+        Counter counter = counterPlacements[x][y];
+        if (counter != null) {
+          if(hasWon(counterPlacements, x, y, counter)) {
             return true;
           }
         } else if(boardFull){
@@ -177,44 +151,41 @@ public class IsHackingAi extends Player {
     return boardFull;
   }
 
-  private boolean hasWon(Board board, Position position, Counter counter) {
-    return checkDirection(board, position, counter, 1, 0) ||
-           checkDirection(board, position, counter, 0, 1) ||
-           checkDirection(board, position, counter, 1, 1) ||
-           checkDirection(board, position, counter, 1, -1);
+  private boolean hasWon(Counter[][] counterPlacements, int x, int y, Counter counter) {
+    return checkDirection(counterPlacements, x, y, counter, 1, 0) ||
+           checkDirection(counterPlacements, x, y, counter, 0, 1) ||
+           checkDirection(counterPlacements, x, y, counter, 1, 1) ||
+           checkDirection(counterPlacements, x, y, counter, 1, -1);
   }
 
-  private boolean checkDirection(Board board, Position position, Counter counter, int dx, int dy) {
-    int neededForWin = 4, x = position.getX(), y = position.getY();
+  private boolean checkDirection(Counter[][] counterPlacements, int x, int y, Counter counter, int dx, int dy) {
+    int neededForWin = 4;
 
     for(int i = 0; i < 4; i++){
-      Position nextPosition = new Position(x + i * dx, y + i * dy);
-      Counter boardCounter = board.getCounterAtPosition(nextPosition);
-      if(board.isWithinBoard(nextPosition) &&
-         counter.equals(boardCounter)
-      ) {
-        neededForWin--;
-      }
-      else break;
+      int nx = x + i * dx, ny = y + i * dy;
+      if(isWithinBoardArray(nx, ny)) {
+        Counter boardCounter = counterPlacements[nx][ny];
+        if (counter.equals(boardCounter)) {
+          neededForWin--;
+        }
+      } else break;
     }
 
     return neededForWin == 0;
   }
 
-  private int evaluateBoard(Board board) {
+  private int evaluateBoard(Counter[][] counterPlacements) {
     int score = 0;
-    int height = board.getConfig().getHeight(), width = board.getConfig().getWidth();
 
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        Position position = new Position(x, y);
-        if (board.hasCounterAtPosition(position)) {
-          Counter counter = board.getCounterAtPosition(position);
+    for (int x = 0; x < WIDTH; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
+        Counter counter = counterPlacements[x][y];
+        if (counter != null) {
           if(counter == this.getCounter()) {
-            score += evaluatePosition(board, position, counter);
+            score += evaluatePosition(counterPlacements, x, y, counter);
           }
           else {
-            score -= evaluatePosition(board, position, counter);
+            score -= evaluatePosition(counterPlacements, x, y, counter);
           }
         }
       }
@@ -222,23 +193,20 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int evaluatePosition(Board board, Position position, Counter counter) {
+  private int evaluatePosition(Counter[][] counterPlacements, int x, int y, Counter counter) {
     int score = 0;
 
-    score += scoreDirection(board, position, counter, 1, 0);
-    score += scoreDirection(board, position, counter, 1, 1);
-    score += scoreDirection(board, position, counter, 1, -1);
-    score += scoreDirection(board, position, counter, 0, 1);
-    score += centreColumnBias(board, counter);
+    score += scoreDirection(counterPlacements, x, y, counter, 1, 0);
+    score += scoreDirection(counterPlacements, x, y, counter, 1, 1);
+    score += scoreDirection(counterPlacements, x, y, counter, 1, -1);
+    score += scoreDirection(counterPlacements, x, y, counter, 0, 1);
 
     return score;
   }
 
-  private int scoreDirection(Board board, Position position, Counter counter, int dx, int dy) {
-    Counter[][] counterPlacements = board.getCounterPlacements();
+  private int scoreDirection(Counter[][] counterPlacements, int x, int y, Counter counter, int dx, int dy) {
     int count = 0;
     int openSpaces = 0;
-    int x = position.getX(), y = position.getY();
 
     for(int i = 0; i < 4; i++){
       int nx = x + i * dx, ny = y + i * dy;
@@ -266,24 +234,29 @@ public class IsHackingAi extends Player {
   }
 
 
-  private boolean isColumnPlayable(Board board, int column) {
-    Position position = new Position(column, board.getConfig().getHeight() - 1);
-    return !board.hasCounterAtPosition(position);
+  private boolean isColumnPlayable(Counter[][] counterPlacements, int column) {
+    for(int row = HEIGHT - 1; row >= 0; row--) {
+      if(counterPlacements[column][row] == null) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private boolean isWinningMove(Board board, Counter counter, int column) {
+    Counter[][] counterPlacements = board.getCounterPlacements();
     try{
-      Board newBoard = new Board(board, column, counter);
-      for (int x = 0; x < newBoard.getConfig().getWidth(); x++) {
-        for (int y = 0; y < newBoard.getConfig().getHeight(); y++) {
-          Position position = new Position(x, y);
-          if (newBoard.hasCounterAtPosition(position)) {
-            if (newBoard.getCounterAtPosition(position).equals(counter)) {
-              if(hasWon(newBoard, position, counter)) {
+      Counter[][] newCounterPlacements = makeMoveArray(counterPlacements, counter, column);
+      for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+          Counter counterAtPosition = newCounterPlacements[x][y];
+            if (counter.equals(counterAtPosition)) {
+              if(hasWon(newCounterPlacements, x, y, counter)) {
                 return true;
               }
             }
-          }
+
         }
       }
     }
