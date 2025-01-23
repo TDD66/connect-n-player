@@ -2,49 +2,38 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 
 import com.thehutgroup.accelerator.connectn.player.*;
 
-import java.util.*;
-import java.util.concurrent.TimeoutException;
-
-
 public class IsHackingAi extends Player {
-  private long startTime;
-  private static final long TIME_LIMIT = 10_000_000_000L;
+  private static final long TIME_LIMIT = 10_000_000_000L; // 10 seconds
   private static final int MIN_DEPTH = 6;
-  private static final int MAX_DEPTH = 50;
+  private static final int MAX_DEPTH = 1000;
+  private long startTime;
 
-  private static final int CENTRE_ADJUSTMENT = 1;
-
-  private final int[] columnOrder;
-  private static final int HEIGHT = 8;
   private static final int WIDTH = 10;
+  private static final int HEIGHT = 8;
+  private static final long FULL_BOARD_MASK = 0xFF_FF_FF_FF_FF_FF_FF_FFL; // Full 8x10 board
+
+  private final int[] columnOrder = {4, 5, 3, 6, 2, 7, 1, 8, 0, 9};
 
   public IsHackingAi(Counter counter) {
-    //TODO: fill in your name here
     super(counter, IsHackingAi.class.getName());
-    columnOrder = new int[]{4, 5, 3, 6, 2, 7, 1, 8, 0, 9};
   }
 
   @Override
   public int makeMove(Board board) {
-    //TODO: some crazy analysis
-    //TODO: make sure said analysis uses less than 2G of heap and returns within 10 seconds on whichever machine is running it
     this.startTime = System.nanoTime();
-    int move = getBestMove(board);
-    long timeTaken = System.nanoTime() - this.startTime;
-    System.out.printf("%d seconds%n", timeTaken);
-    return move;
+    return getBestMove(board);
   }
 
   private int getBestMove(Board board) {
-    int canIWin = checkInstantWin(board, getCounter());
-    if(canIWin != -1) {
-      return canIWin;
-    }
-
-    int canILose = checkInstantWin(board, getCounter().getOther());
-    if(canILose != -1) {
-      return canILose;
-    }
+//    int canIWin = checkInstantWin(board, getCounter());
+//    if (canIWin != -1) {
+//      return canIWin;
+//    }
+//
+//    int canILose = checkInstantWin(board, getCounter().getOther());
+//    if (canILose != -1) {
+//      return canILose;
+//    }
 
     return iterativeDeepeningSearch(board);
   }
@@ -53,8 +42,8 @@ public class IsHackingAi extends Player {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
 
-    for(int depth = MIN_DEPTH; !isTimeUp() && depth <= MAX_DEPTH; depth += 2) {
-      try{
+    for (int depth = MIN_DEPTH; !isTimeUp() && depth <= MAX_DEPTH; depth += 2) {
+      try {
         int[] result = searchAtDepth(board, depth);
         if (result[1] > bestScore) {
           bestScore = result[1];
@@ -72,218 +61,138 @@ public class IsHackingAi extends Player {
     int bestMove = -1;
     int bestScore = Integer.MIN_VALUE;
 
-    for(int move : columnOrder) {
-      try {
-        Board newBoard = new Board(board, move, getCounter());
-        int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
+    for (int move : columnOrder) {
+      if (isColumnPlayable(board, move)) {
+        try {
+          Board newBoard = new Board(board, move, getCounter());
+          long newRedBitboard = boardToBitboard(newBoard, getCounter());
+          long newYellowBitboard = boardToBitboard(newBoard, getCounter().getOther());
+          int[] result = miniMaxWithAlphaBeta(newRedBitboard, newYellowBitboard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
 
-        if (result[1] > bestScore) {
-          bestScore = result[1];
-          bestMove = move;
+          if (result[1] > bestScore) {
+            bestScore = result[1];
+            bestMove = move;
+          }
+        } catch(InvalidMoveException ignored){}
+        catch (TimeOutException e) {
+          System.out.println("Depth failed at: " + depth);
+          throw e;
         }
       }
-      catch (InvalidMoveException ignored) {}
-      catch (TimeOutException timeOutException) {
-        System.out.println("Depth failed at: " + depth);
-        throw timeOutException;
-      }
     }
+
     return new int[]{bestMove, bestScore};
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws TimeOutException {
-    if(isTimeUp()){
+  private int[] miniMaxWithAlphaBeta(long redBitboard, long yellowBitboard, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws TimeOutException {
+    if (isTimeUp()) {
       throw new TimeOutException();
     }
 
-    if (depth == 0 || isGameTerminal(board)){
-      return new int[] {-1, evaluateBoard(board)};
+    if (depth == 0 || isGameTerminal(redBitboard, yellowBitboard)) {
+      return new int[]{-1, evaluateBoard(redBitboard, yellowBitboard)};
     }
 
     int bestMove = -1;
     int bestScore = isMaximisingPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-    Counter counter = isMaximisingPlayer ? getCounter() : getCounter().getOther();
 
-    for (Integer move : columnOrder) {
+    for (int move : columnOrder) {
+      if (isColumnPlayableBitboard(redBitboard, move, yellowBitboard)) {
+        long newRedBitboard = makeMoveOnBitboard(redBitboard, move, getCounter());
+        long newYellowBitboard = makeMoveOnBitboard(yellowBitboard, move, getCounter().getOther());
+        int[] result = miniMaxWithAlphaBeta(newRedBitboard, newYellowBitboard, depth - 1, alpha, beta, !isMaximisingPlayer);
 
-      if(!isColumnPlayable(board, move)) continue;
-
-      Board newBoard;
-      try{
-        newBoard = new Board(board, move, counter);
-      } catch (InvalidMoveException e) {
-        continue;
-      }
-
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer);
-      if (isMaximisingPlayer) {
-        if (result[1] > bestScore) {
-          bestScore = result[1];
-          bestMove = move;
+        if (isMaximisingPlayer) {
+          if (result[1] > bestScore) {
+            bestScore = result[1];
+            bestMove = move;
+          }
+          alpha = Math.max(alpha, bestScore);
+        } else {
+          if (result[1] < bestScore) {
+            bestScore = result[1];
+            bestMove = move;
+          }
+          beta = Math.min(beta, bestScore);
         }
-        alpha = Math.max(alpha, bestScore);
-      } else {
-        if (result[1] < bestScore) {
-          bestScore = result[1];
-          bestMove = move;
+
+        if (beta <= alpha) {
+          break;
         }
-        beta = Math.min(beta, bestScore);
-      }
-      if (beta <= alpha) {
-        break;
       }
     }
 
     return new int[]{bestMove, bestScore};
   }
 
-  public boolean isGameTerminal(Board board) {
-    int width = board.getConfig().getWidth();
-    int height = board.getConfig().getHeight();
-    boolean boardFull = true;
-
-    for(int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
+  private long boardToBitboard(Board board, Counter counter) {
+    long bitboard = 0L;
+    for (int x = 0; x < WIDTH; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
         Position position = new Position(x, y);
-        if (board.hasCounterAtPosition(position)) {
-          Counter counter = board.getCounterAtPosition(position);
-          if(hasWon(board, position, counter)) {
-            return true;
-          }
-        } else if(boardFull){
-          boardFull = false;
+        if (board.hasCounterAtPosition(position) && board.getCounterAtPosition(position).equals(counter)) {
+          int index = x + y * WIDTH;
+          bitboard |= (1L << index);
         }
       }
     }
-
-    return boardFull;
+    return bitboard;
   }
-
-  private boolean hasWon(Board board, Position position, Counter counter) {
-    return checkDirection(board, position, counter, 1, 0) ||
-           checkDirection(board, position, counter, 0, 1) ||
-           checkDirection(board, position, counter, 1, 1) ||
-           checkDirection(board, position, counter, 1, -1);
-  }
-
-  private boolean checkDirection(Board board, Position position, Counter counter, int dx, int dy) {
-    int neededForWin = 4, x = position.getX(), y = position.getY();
-
-    for(int i = 0; i < 4; i++){
-      Position nextPosition = new Position(x + i * dx, y + i * dy);
-      Counter boardCounter = board.getCounterAtPosition(nextPosition);
-      if(board.isWithinBoard(nextPosition) &&
-         counter.equals(boardCounter)
-      ) {
-        neededForWin--;
-      }
-      else break;
-    }
-
-    return neededForWin == 0;
-  }
-
-  private int evaluateBoard(Board board) {
-    int score = 0;
-    int height = board.getConfig().getHeight(), width = board.getConfig().getWidth();
-
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        Position position = new Position(x, y);
-        if (board.hasCounterAtPosition(position)) {
-          Counter counter = board.getCounterAtPosition(position);
-          if(counter == this.getCounter()) {
-            score += evaluatePosition(board, position, counter);
-          }
-          else {
-            score -= evaluatePosition(board, position, counter);
-          }
-        }
-      }
-    }
-    return score;
-  }
-
-  private int evaluatePosition(Board board, Position position, Counter counter) {
-    int score = 0;
-
-    score += scoreDirection(board, position, counter, 1, 0);
-    score += scoreDirection(board, position, counter, 1, 1);
-    score += scoreDirection(board, position, counter, 1, -1);
-    score += scoreDirection(board, position, counter, 0, 1);
-
-    return score;
-  }
-
-  private int scoreDirection(Board board, Position position, Counter counter, int dx, int dy) {
-    Counter[][] counterPlacements = board.getCounterPlacements();
-    int count = 0;
-    int openSpaces = 0;
-    int x = position.getX(), y = position.getY();
-
-    for(int i = 0; i < 4; i++){
-      int nx = x + i * dx, ny = y + i * dy;
-      if(isWithinBoardArray(nx, ny)) {
-        Counter boardCounter = counterPlacements[nx][ny];
-        if(counter.equals(boardCounter)) {
-          count++;
-        }
-        else if(counterPlacements[nx][ny] == null){
-          openSpaces++;
-        }
-      }
-    }
-
-    if(count == 4) {
-      return Integer.MAX_VALUE;
-    }
-    else if(count == 3 && openSpaces == 1) {
-      return 100;
-    }
-    else if(count == 2 && openSpaces == 2){
-      return 10;
-    }
-    return 0;
-  }
-
 
   private boolean isColumnPlayable(Board board, int column) {
-    Position position = new Position(column, board.getConfig().getHeight() - 1);
+    Position position = new Position(column, HEIGHT - 1);
     return !board.hasCounterAtPosition(position);
   }
 
-  private boolean isWinningMove(Board board, Counter counter, int column) {
-    try{
-      Board newBoard = new Board(board, column, counter);
-      for (int x = 0; x < newBoard.getConfig().getWidth(); x++) {
-        for (int y = 0; y < newBoard.getConfig().getHeight(); y++) {
-          Position position = new Position(x, y);
-          if (newBoard.hasCounterAtPosition(position)) {
-            if (newBoard.getCounterAtPosition(position).equals(counter)) {
-              if(hasWon(newBoard, position, counter)) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-    catch(InvalidMoveException ignored) {
-    }
-    return false;
+  private boolean isColumnPlayableBitboard(long redBitboard, int column, long yellowBitboard) {
+    long mask = 1L << (column + (HEIGHT - 1) * WIDTH);
+    return (redBitboard & mask) == 0 && (yellowBitboard & mask) == 0;
   }
 
-  private int checkInstantWin(Board board, Counter counter) {
-    for (int x = 0; x < board.getConfig().getWidth(); x++) {
-      if(isWinningMove(board, counter, x)) {
-        return x;
+  private long makeMoveOnBitboard(long bitboard, int column, Counter counter) {
+    int index = column + (findAvailableRow(column) * WIDTH);
+    return bitboard | (1L << index);
+  }
+
+  private int findAvailableRow(int column) {
+    for (int row = HEIGHT - 1; row >= 0; row--) {
+      if (!isColumnFull(column, row)) {
+        return row;
       }
     }
     return -1;
   }
 
-  private boolean isWithinBoardArray(int x, int y){
-    return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
+  private boolean isColumnFull(int column, int row) {
+    // Check the bitboard for the column's full status
+    return false;  // Replace with actual bitboard check
+  }
+
+  private int evaluateBoard(long redBitboard, long yellowBitboard) {
+    int score = 0;
+
+    // Evaluate horizontal, vertical, and diagonal patterns here using bitwise operations
+    score += evaluateLines(redBitboard, yellowBitboard);
+    score += evaluateDiagonals(redBitboard, yellowBitboard);
+
+    return score;
+  }
+
+  private int evaluateLines(long redBitboard, long yellowBitboard) {
+    int score = 0;
+    // Check each horizontal, vertical, and diagonal line here
+    return score;
+  }
+
+  private int evaluateDiagonals(long redBitboard, long yellowBitboard) {
+    int score = 0;
+    // Check for diagonal patterns using bitwise operations
+    return score;
+  }
+
+  private boolean isGameTerminal(long redBitboard, long yellowBitboard) {
+    // Check for a terminal state using the bitboards
+    return false;  // Replace with actual terminal check
   }
 
   private boolean isTimeUp() {
@@ -292,5 +201,4 @@ public class IsHackingAi extends Player {
 
   private static class TimeOutException extends RuntimeException {
   }
-
 }
