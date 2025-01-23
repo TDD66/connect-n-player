@@ -9,6 +9,8 @@ public class IsHackingAi extends Player {
   private static final int MIN_DEPTH = 2;
   private static final int MAX_DEPTH = 10;
 
+  private static final int CENTRE_ADJUSTMENT = 1;
+
   private final int[] columnOrder;
 
   public IsHackingAi(Counter counter) {
@@ -107,7 +109,7 @@ public class IsHackingAi extends Player {
         Position position = new Position(col, row);
         if (board.hasCounterAtPosition(position)) {
           if (board.getCounterAtPosition(position).equals(counter)) {
-            score += 3;
+            score += CENTRE_ADJUSTMENT;
           }
         }
       }
