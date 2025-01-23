@@ -233,7 +233,6 @@ public class IsHackingAi extends Player {
     else if (count == 2){
       return 5;
     }
-
     return 0;
   }
 
