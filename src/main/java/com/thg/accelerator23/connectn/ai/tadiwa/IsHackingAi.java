@@ -272,7 +272,7 @@ public class IsHackingAi extends Player {
   }
 
   private int checkInstantWin(Board board, Counter counter) {
-    for (int x = 0; x < board.getConfig().getWidth(); x++) {
+    for (int x = 0; x < WIDTH; x++) {
       if(isWinningMove(board, counter, x)) {
         return x;
       }
