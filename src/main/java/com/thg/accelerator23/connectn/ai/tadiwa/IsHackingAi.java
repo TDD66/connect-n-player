@@ -285,7 +285,7 @@ public class IsHackingAi extends Player {
   }
 
   private boolean isTimeUp() {
-    return System.nanoTime() - startTime > TIME_LIMIT - 5_000_000_000L;
+    return System.nanoTime() - startTime > TIME_LIMIT - 500_000_000L;
   }
 
   private static class TimeOutException extends RuntimeException {
