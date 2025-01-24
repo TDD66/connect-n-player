@@ -167,17 +167,17 @@ public class IsHackingAi extends Player {
   }
 
   private boolean checkDirection(Board board, Position position, Counter counter, int dx, int dy) {
+    Counter[][] counterPlacements = board.getCounterPlacements();
     int neededForWin = 4, x = position.getX(), y = position.getY();
 
-    for(int i = 0; i < 4; i++){
-      Position nextPosition = new Position(x + i * dx, y + i * dy);
-      Counter boardCounter = board.getCounterAtPosition(nextPosition);
-      if(board.isWithinBoard(nextPosition) &&
-         counter.equals(boardCounter)
-      ) {
-        neededForWin--;
+    for(int i = 0; i < 4; i++) {
+      int nx = x + i * dx, ny = y + i * dy;
+      if (isWithinBoardArray(nx, ny)) {
+        Counter boardCounter = counterPlacements[nx][ny];
+        if (counter.equals(boardCounter)) {
+          neededForWin--;
+        } else break;
       }
-      else break;
     }
 
     return neededForWin == 0;
