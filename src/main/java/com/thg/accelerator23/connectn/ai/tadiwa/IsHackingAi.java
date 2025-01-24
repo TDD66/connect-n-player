@@ -10,7 +10,7 @@ public class IsHackingAi extends Player {
   private long startTime;
   private static final long TIME_LIMIT = 10_000_000_000L;
   private static final int MIN_DEPTH = 6;
-  private static final int MAX_DEPTH = 50;
+  private static final int MAX_DEPTH = 80;
 
   private static final int CENTRE_ADJUSTMENT = 1;
 
