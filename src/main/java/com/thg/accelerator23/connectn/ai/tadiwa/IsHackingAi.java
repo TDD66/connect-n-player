@@ -77,7 +77,7 @@ public class IsHackingAi extends Player {
     for(int move : columnOrder) {
       try {
         Board newBoard = new Board(board, move, getCounter());
-        int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
+        int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, Integer.MIN_VALUE, Integer.MAX_VALUE, false, depth);
 
         if (result[1] > bestScore) {
           bestScore = result[1];
@@ -93,13 +93,13 @@ public class IsHackingAi extends Player {
     return new int[]{bestMove, bestScore};
   }
 
-  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer) throws TimeOutException {
+  private int[] miniMaxWithAlphaBeta(Board board, int depth, int alpha, int beta, boolean isMaximisingPlayer, int initialDepth) throws TimeOutException {
     if(isTimeUp()){
       throw new TimeOutException();
     }
 
     if (depth == 0 || isGameTerminal(board)){
-      return new int[] {-1, evaluateBoard(board)};
+      return new int[] {-1, evaluateBoard(board, initialDepth)};
     }
 
     int bestMove = -1;
@@ -117,7 +117,7 @@ public class IsHackingAi extends Player {
         continue;
       }
 
-      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer);
+      int[] result = miniMaxWithAlphaBeta(newBoard, depth - 1, alpha, beta, !isMaximisingPlayer, initialDepth);
       if (isMaximisingPlayer) {
         if (result[1] > bestScore) {
           bestScore = result[1];
@@ -185,7 +185,7 @@ public class IsHackingAi extends Player {
     return neededForWin == 0;
   }
 
-  private int evaluateBoard(Board board) {
+  private int evaluateBoard(Board board, int depth) {
     int score = 0;
     Counter[][] counterPlacements = board.getCounterPlacements();
     Counter myCounter = this.getCounter();
@@ -195,10 +195,10 @@ public class IsHackingAi extends Player {
         Counter counter = counterPlacements[x][y];
         if (counter != null) {
           if(counter == myCounter) {
-            score += evaluatePosition(counterPlacements, x, y, counter);
+            score += evaluatePosition(counterPlacements, x, y, counter) + depth;
           }
           else {
-            score -= (int) (evaluatePosition(counterPlacements, x, y, counter) * 1.2);
+            score -= (int) (evaluatePosition(counterPlacements, x, y, counter) * 1.2) - depth;
           }
         }
       }
