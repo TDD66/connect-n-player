@@ -198,7 +198,7 @@ public class IsHackingAi extends Player {
             score += evaluatePosition(counterPlacements, x, y, counter) + depth;
           }
           else {
-            score -= (int) (evaluatePosition(counterPlacements, x, y, counter) * 1.2) - depth;
+            score -= (int) (evaluatePosition(counterPlacements, x, y, counter) * 1.1) - depth;
           }
         }
       }
