@@ -271,7 +271,7 @@ public class IsHackingAi extends Player {
         return THREE_SCORE;
       }
       else if(openSpaces == 1) {
-        return THREE_SCORE / 5;
+        return THREE_SCORE / 12;
       }
     }
     else if(count == 2){
