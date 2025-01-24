@@ -2,17 +2,11 @@ package com.thg.accelerator23.connectn.ai.tadiwa;
 
 import com.thehutgroup.accelerator.connectn.player.*;
 
-import java.util.*;
-import java.util.concurrent.TimeoutException;
-
-
 public class IsHackingAi extends Player {
   private long startTime;
   private static final long TIME_LIMIT = 10_000_000_000L;
   private static final int MIN_DEPTH = 6;
   private static final int MAX_DEPTH = 80;
-
-  private static final int CENTRE_ADJUSTMENT = 1;
 
   private final int[] columnOrder;
   private static final int HEIGHT = 8;
@@ -272,7 +266,7 @@ public class IsHackingAi extends Player {
   }
 
   private int checkInstantWin(Board board, Counter counter) {
-    for (int x = 0; x < board.getConfig().getWidth(); x++) {
+    for (int x = 0; x < WIDTH; x++) {
       if(isWinningMove(board, counter, x)) {
         return x;
       }
