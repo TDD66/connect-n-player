@@ -192,10 +192,10 @@ public class IsHackingAi extends Player {
         Counter counter = counterPlacements[x][y];
         if (counter != null) {
           if(counter == this.getCounter()) {
-            score += evaluatePosition(board, x, y, counter);
+            score += evaluatePosition(counterPlacements, x, y, counter);
           }
           else {
-            score -= evaluatePosition(board, x, y, counter);
+            score -= evaluatePosition(counterPlacements, x, y, counter);
           }
         }
       }
@@ -203,10 +203,10 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int evaluatePosition(Board board, int x, int y, Counter counter) {
+  private int evaluatePosition(Counter[][] counterPlacements, int x, int y, Counter counter) {
     int score = 0;
-    Counter[][] counterPlacements = board.getCounterPlacements();
 
+    // Directional Checks
     score += scoreDirection(counterPlacements, x, y, counter, 1, 0);
     score += scoreDirection(counterPlacements, x, y, counter, 1, 1);
     score += scoreDirection(counterPlacements, x, y, counter, 1, -1);
