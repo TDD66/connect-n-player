@@ -12,9 +12,12 @@ public class IsHackingAi extends Player {
   private static final int HEIGHT = 8;
   private static final int WIDTH = 10;
   private static final int[][] DIRECTIONS = new int[][]{{1, 0}, {1, 1}, {1, -1}, {0, 1}}; // Right, Right Diag, Left Diag, Up
+  private static final int[] CENTRAL_X = new int[]{4, 5};
+  private static final int[] CENTRAL_Y = new int[]{2, 3, 4, 5};
   private static final int FOUR_SCORE = Integer.MAX_VALUE;
   private static final int THREE_SCORE = 100;
   private static final int TWO_SCORE = 10;
+  private static final int CENTRE_SCORE = 5;
 
 
   public IsHackingAi(Counter counter) {
@@ -185,12 +188,13 @@ public class IsHackingAi extends Player {
   private int evaluateBoard(Board board) {
     int score = 0;
     Counter[][] counterPlacements = board.getCounterPlacements();
+    Counter myCounter = this.getCounter();
 
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
         Counter counter = counterPlacements[x][y];
         if (counter != null) {
-          if(counter == this.getCounter()) {
+          if(counter == myCounter) {
             score += evaluatePosition(counterPlacements, x, y, counter);
           }
           else {
@@ -199,6 +203,21 @@ public class IsHackingAi extends Player {
         }
       }
     }
+
+    for(int x : CENTRAL_X){
+      for(int y : CENTRAL_Y){
+        Counter counter = counterPlacements[x][y];
+        if (counter != null) {
+          if(counter == myCounter) {
+            score += CENTRE_SCORE;
+          }
+          else {
+            score -= CENTRE_SCORE;
+          }
+        }
+      }
+    }
+
     return score;
   }
 
