@@ -185,18 +185,17 @@ public class IsHackingAi extends Player {
 
   private int evaluateBoard(Board board) {
     int score = 0;
-    int height = board.getConfig().getHeight(), width = board.getConfig().getWidth();
+    Counter[][] counterPlacements = board.getCounterPlacements();
 
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        Position position = new Position(x, y);
-        if (board.hasCounterAtPosition(position)) {
-          Counter counter = board.getCounterAtPosition(position);
+    for (int x = 0; x < WIDTH; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
+        Counter counter = counterPlacements[x][y];
+        if (counter != null) {
           if(counter == this.getCounter()) {
-            score += evaluatePosition(board, position, counter);
+            score += evaluatePosition(board, x, y, counter);
           }
           else {
-            score -= evaluatePosition(board, position, counter);
+            score -= evaluatePosition(board, x, y, counter);
           }
         }
       }
@@ -204,22 +203,21 @@ public class IsHackingAi extends Player {
     return score;
   }
 
-  private int evaluatePosition(Board board, Position position, Counter counter) {
+  private int evaluatePosition(Board board, int x, int y, Counter counter) {
     int score = 0;
+    Counter[][] counterPlacements = board.getCounterPlacements();
 
-    score += scoreDirection(board, position, counter, 1, 0);
-    score += scoreDirection(board, position, counter, 1, 1);
-    score += scoreDirection(board, position, counter, 1, -1);
-    score += scoreDirection(board, position, counter, 0, 1);
+    score += scoreDirection(counterPlacements, x, y, counter, 1, 0);
+    score += scoreDirection(counterPlacements, x, y, counter, 1, 1);
+    score += scoreDirection(counterPlacements, x, y, counter, 1, -1);
+    score += scoreDirection(counterPlacements, x, y, counter, 0, 1);
 
     return score;
   }
 
-  private int scoreDirection(Board board, Position position, Counter counter, int dx, int dy) {
-    Counter[][] counterPlacements = board.getCounterPlacements();
+  private int scoreDirection(Counter[][] counterPlacements, int x, int y, Counter counter, int dx, int dy) {
     int count = 0;
     int openSpaces = 0;
-    int x = position.getX(), y = position.getY();
 
     for(int i = 0; i < 4; i++){
       int nx = x + i * dx, ny = y + i * dy;
@@ -228,7 +226,7 @@ public class IsHackingAi extends Player {
         if(counter.equals(boardCounter)) {
           count++;
         }
-        else if(counterPlacements[nx][ny] == null){
+        else if(boardCounter == null){
           openSpaces++;
         }
       }
@@ -287,7 +285,7 @@ public class IsHackingAi extends Player {
   }
 
   private boolean isTimeUp() {
-    return System.nanoTime() - startTime > TIME_LIMIT - 5_000_000L;
+    return System.nanoTime() - startTime > TIME_LIMIT - 5_000_000_000L;
   }
 
   private static class TimeOutException extends RuntimeException {
