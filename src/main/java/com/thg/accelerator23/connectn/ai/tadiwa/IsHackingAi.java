@@ -218,7 +218,7 @@ public class IsHackingAi extends Player {
       score += val;
     }
 
-    return score * threesInPosition;
+    return score + (score * threesInPosition);
   }
 
   private int scoreDirection(Counter[][] counterPlacements, int x, int y, Counter counter, int dx, int dy) {
