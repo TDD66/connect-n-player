@@ -11,6 +11,11 @@ public class IsHackingAi extends Player {
   private final int[] columnOrder;
   private static final int HEIGHT = 8;
   private static final int WIDTH = 10;
+  private static final int[][] DIRECTIONS = new int[][]{{1, 0}, {1, 1}, {1, -1}, {0, 1}}; // Right, Right Diag, Left Diag, Up
+  private static final int FOUR_SCORE = Integer.MAX_VALUE;
+  private static final int THREE_SCORE = 100;
+  private static final int TWO_SCORE = 10;
+
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -198,15 +203,22 @@ public class IsHackingAi extends Player {
   }
 
   private int evaluatePosition(Counter[][] counterPlacements, int x, int y, Counter counter) {
-    int score = 0;
+    int score = 0, val;
+    int threesInPosition = 0;
 
     // Directional Checks
-    score += scoreDirection(counterPlacements, x, y, counter, 1, 0);
-    score += scoreDirection(counterPlacements, x, y, counter, 1, 1);
-    score += scoreDirection(counterPlacements, x, y, counter, 1, -1);
-    score += scoreDirection(counterPlacements, x, y, counter, 0, 1);
+    for(int[] direction : DIRECTIONS) {
+      val = scoreDirection(counterPlacements, x, y, counter,direction[0], direction[1]);
+      if(val == FOUR_SCORE){
+        return val;
+      }
+      else if(val == THREE_SCORE){
+        threesInPosition++;
+      }
+      score += val;
+    }
 
-    return score;
+    return score * threesInPosition;
   }
 
   private int scoreDirection(Counter[][] counterPlacements, int x, int y, Counter counter, int dx, int dy) {
@@ -227,13 +239,13 @@ public class IsHackingAi extends Player {
     }
 
     if(count == 4) {
-      return Integer.MAX_VALUE;
+      return FOUR_SCORE;
     }
     else if(count == 3 && openSpaces == 1) {
-      return 100;
+      return THREE_SCORE;
     }
     else if(count == 2 && openSpaces == 2){
-      return 10;
+      return TWO_SCORE;
     }
     return 0;
   }
@@ -247,8 +259,8 @@ public class IsHackingAi extends Player {
   private boolean isWinningMove(Board board, Counter counter, int column) {
     try{
       Board newBoard = new Board(board, column, counter);
-      for (int x = 0; x < newBoard.getConfig().getWidth(); x++) {
-        for (int y = 0; y < newBoard.getConfig().getHeight(); y++) {
+      for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
           Position position = new Position(x, y);
           if (newBoard.hasCounterAtPosition(position)) {
             if (newBoard.getCounterAtPosition(position).equals(counter)) {
@@ -266,7 +278,7 @@ public class IsHackingAi extends Player {
   }
 
   private int checkInstantWin(Board board, Counter counter) {
-    for (int x = 0; x < board.getConfig().getWidth(); x++) {
+    for (int x = 0; x < WIDTH; x++) {
       if(isWinningMove(board, counter, x)) {
         return x;
       }
