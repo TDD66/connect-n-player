@@ -243,6 +243,7 @@ public class IsHackingAi extends Player {
   private int scoreDirection(Counter[][] counterPlacements, int x, int y, Counter counter, int dx, int dy) {
     int count = 0;
     int openSpaces = 0;
+    int threatOpenSpaces = 0;
 
     for(int i = 0; i < 4; i++){
       int nx = x + i * dx, ny = y + i * dy;
@@ -252,7 +253,12 @@ public class IsHackingAi extends Player {
           count++;
         }
         else if(boardCounter == null){
-          openSpaces++;
+          if(isOpenSpaceAThreat(counterPlacements, nx, ny)){
+            threatOpenSpaces++;
+          }
+          else {
+            openSpaces++;
+          }
         }
       }
     }
@@ -260,15 +266,33 @@ public class IsHackingAi extends Player {
     if(count == 4) {
       return FOUR_SCORE;
     }
-    else if(count == 3 && openSpaces == 1) {
-      return THREE_SCORE;
+    else if(count == 3) {
+      if(threatOpenSpaces == 1) {
+        return THREE_SCORE;
+      }
+      else if(openSpaces == 1) {
+        return THREE_SCORE / 5;
+      }
     }
-    else if(count == 2 && openSpaces == 2){
-      return TWO_SCORE;
+    else if(count == 2){
+      if(threatOpenSpaces == 2) {
+        return TWO_SCORE;
+      } else if (threatOpenSpaces == 1 && openSpaces == 1) {
+        return TWO_SCORE / 2;
+      }
+      else if(openSpaces == 2) {
+        return TWO_SCORE / 5;
+      }
     }
     return 0;
   }
 
+  private boolean isOpenSpaceAThreat(Counter[][] counterPlacements, int x, int y) {
+    if(y == 0){
+      return true;
+    }
+    return counterPlacements[x][y - 1] != null;
+  }
 
   private boolean isColumnPlayable(Board board, int column) {
     Position position = new Position(column, board.getConfig().getHeight() - 1);
