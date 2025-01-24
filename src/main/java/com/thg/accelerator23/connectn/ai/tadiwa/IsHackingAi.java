@@ -11,6 +11,8 @@ public class IsHackingAi extends Player {
   private final int[] columnOrder;
   private static final int HEIGHT = 8;
   private static final int WIDTH = 10;
+  private static final int[] dx = new int[]{1, 0, 1, 1};
+  private static final int[] dy = new int[]{0, 1, 1, -1};
 
   public IsHackingAi(Counter counter) {
     //TODO: fill in your name here
@@ -198,13 +200,15 @@ public class IsHackingAi extends Player {
   }
 
   private int evaluatePosition(Counter[][] counterPlacements, int x, int y, Counter counter) {
-    int score = 0;
-
+    int score = 0, returned;
     // Directional Checks
-    score += scoreDirection(counterPlacements, x, y, counter, 1, 0);
-    score += scoreDirection(counterPlacements, x, y, counter, 1, 1);
-    score += scoreDirection(counterPlacements, x, y, counter, 1, -1);
-    score += scoreDirection(counterPlacements, x, y, counter, 0, 1);
+    for(int i = 0; i < 4; i++) {
+      returned = scoreDirection(counterPlacements, x, y, counter, dx[i], dy[i]);
+      if(returned == Integer.MAX_VALUE){
+        return returned;
+      }
+      score += returned;
+    }
 
     return score;
   }
@@ -283,6 +287,10 @@ public class IsHackingAi extends Player {
   }
 
   private static class TimeOutException extends RuntimeException {
+  }
+
+  private static class WinningStateException extends RuntimeException {
+
   }
 
 }
